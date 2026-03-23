@@ -27,3 +27,13 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+select option {
+  background-color: white;
+  color: black;
+}
+
+.dark select option {
+  background-color: white; 
+  color: black; 
+}
