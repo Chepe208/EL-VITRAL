@@ -80,10 +80,10 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             { }
-            <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow group cursor-pointer border border-gray-100 dark:border-gray-700">
+            <Link href="/proyectos/fachada-comercial" className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow group cursor-pointer border border-gray-100 dark:border-gray-700">
               <div className="h-64 overflow-hidden">
                 <Image
-                  src="https://http2.mlstatic.com/D_NQ_NP_688557-MLA93186795373_092025-O.webp"
+                  src="https://vidriostemplex.com/wp-content/uploads/2022/06/PHOTO-2021-11-26-11-01-21-1536x1152.jpg"
                   alt="Fachada de Vidrio Comercial"
                   width={400}
                   height={256}
@@ -103,8 +103,57 @@ export default function LandingPage() {
                   <span className="material-symbols-outlined ml-1 text-sm">arrow_forward</span>
                 </div>
               </div>
-            </div>
+            </Link>
             { }
+            <Link href="/proyectos/divisiones-corporativas" className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow group cursor-pointer border border-gray-100 dark:border-gray-700">
+              <div className="h-64 overflow-hidden">
+                <Image
+                  src="https://th.bing.com/th/id/R.e021e394864a3ee46e884b5f8c597845?rik=zkzo18kF9sPPNA&pid=ImgRaw&r=0"
+                  alt="Divisiones de Oficina de Vidrio"
+                  width={400}
+                  height={256}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  unoptimized
+                />
+              </div>
+              <div className="p-6">
+               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary transition-colors">
+                  Divisiones Comparativas
+               </h3>
+               <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Separadores de ambiente en vidrio laminado acustico.
+               </p>
+               <div className="flex items-center text-primary dark:text-blue-400 font-medium">
+                Ver detalles{' '}
+                <span className="material-symbols-outlined ml-1 text-sm">arrow_forward</span>
+               </div>
+              </div>
+            </Link>
+
+            <Link href="/proyectos/barandas-residenciales" className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow group cursor-pointer border border-gray-100 dark:border-gray-700">
+              <div className="h-64 overflow-hidden">
+                <Image
+                  src="https://lucor.es/wp-content/uploads/2023/01/barandillas-de-vidrio-view-crystal-03.jpg"
+                  alt="Barandas de vidrio Residencial"
+                  width={400}
+                  height={256}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  unoptimized
+                />
+              </div>
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-primary transition-colors">
+                  Barandas Residenciales
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  Diseño e instalación de barandas de cristal para exteriores.
+                </p>
+                <div className=" flex items-center text-primary dark:text-blue-400 font-medium">
+                  Ver detalles{' '}
+                  <span className="material-symbols-outlined ml-1 text-sm">arrow_forward</span>
+                </div>
+              </div>
+            </Link>
           </div>
         </div>
       </section>
