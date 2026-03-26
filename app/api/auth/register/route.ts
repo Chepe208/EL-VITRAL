@@ -19,7 +19,15 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json({ message: 'Usuario registrado' }, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'Error en el servidor' }, { status: 500 });
+  } catch (error: unknown) {
+    console.error('Register error:', error);
+    const message = error instanceof Error ? error.message : 'Error inesperado';
+    return NextResponse.json(
+      {
+        error: 'Error en el servidor',
+        details: process.env.NODE_ENV === 'development' ? message : undefined,
+      },
+      { status: 500 }
+    );
   }
 }

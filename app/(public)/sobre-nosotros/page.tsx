@@ -1,8 +1,12 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { testConnection } from '../../../lib/db';
 
-export default function SobreNosotros() {
+export default async function SobreNosotros() {
+    const dbConnected = await testConnection().catch(() => false);
+    const dbStatusText = dbConnected ? 'Conexión a la base de datos OK ✅' : 'No se pudo conectar a la base de datos ⚠️';
+
     return (
         <div className="min-h-screen bg-gray-50 py-12">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -28,6 +32,7 @@ export default function SobreNosotros() {
                         <h2 className="text-2xl font-bold text-gray-800 mb-4">
                             Mas de 20 años dando forma a tus ideas
                         </h2>
+                        <p className="text-sm font-medium text-green-700 mb-6">{dbStatusText}</p>
                         <p className="text-gray-600 leading-relaxed mb-6">
                             En <strong>El Vitral</strong> somos una empresa familiar con más de dos décadas de experiencia en el sector del vidrio y la cristalería. Nacimos con la pasión por transformar espacios a través de la luz y la transparencia, ofreciendo soluciones a medida para proyectos residenciales, comerciales e industriales.
                         </p>
