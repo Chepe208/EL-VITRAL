@@ -44,50 +44,52 @@ export default async function ProyectoDetalle({ params }: PageProps) {
     }
 
     return (
-       <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <Link href="/" className="inline-flex items-center text-primary hover:text-secondary mb-8">
-              Volver al Inicio        
-            </Link>
+       <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
+           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+               <Link href="/" className="inline-flex items-center text-primary hover:text-secondary mb-8">
+                   Volver al Inicio        
+               </Link>
+               
+               <div className="rounded-lg shadow-md overflow-hidden" style={{ backgroundColor: '#1e2939'}}>
+                   <div className="p-8 md:p-12">
+                       <h1 className="text-4xl font-bold text-white mb-6">{proyecto.titulo}</h1>
+                       <div className="relative h-[500px] rounded-lg overflow-hidden mb-8 shadow-lg">
+                           <Image
+                           src={proyecto.imagen}
+                           alt={proyecto.titulo}
+                           fill
+                           className="object-cover"
+                           unoptimized
+                           />
+                       </div>
+                       <div className="grid grid-cols-1 lg:grid-cols-3 gap8">
+                           <div className="lg:col-span-2">
+                               <h2 className="text-2xl font-bold text-white mb-4">Sobre el Proyecto</h2>
+                               <p className="text-gray-200 leading-relaxed mb-6">{proyecto.detalles}</p>
 
-            <h1 className="text-4xl font-bold text-gray-900 mb-6">{proyecto.titulo}</h1>
-
-            <div className="relative h-[500px] rounded-lg overflow-hidden mb-8 shadow-lg">
-                <Image
-                src={proyecto.imagen}
-                alt={proyecto.titulo}
-                fill
-                className="object-cover"
-                unoptimized
-                />
+                               <h3 className="text-xl font-bold text-white mb-3">Tecnologías utilizadas</h3>
+                               <ul className="list-disc list-inside text-gray-200 mb-6">
+                                   {proyecto.tecnologias.map((tec, idx) => (
+                                     <li key={idx}>{tec}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                            
+                            <div className="bg-gray-800/50 p-6 rounded-lg shadow-md">
+                                <h3 className="text-lg font-bold text-white mb-4">¿Interesado en un proyecto similar?</h3>
+                                <p className="text-gray-200 mb-4">
+                                    Contactanos para recibir asesoría personalizada y cotización sin compromiso.
+                                </p>
+                                <Link 
+                                   href="/cotizar"
+                                   className="inline-block w-full text-center bg-primary text-blue-400 py-2 rounded-md hover:bg-secondary transition-colors"> 
+                                   Solicitar cotizacion 
+                                </Link>
+                            </div>
+                        </div>
+                   </div>
+               </div>
             </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap8">
-                <div className="lg:col-span-2">
-                    <h2 className="text-2xl font-bold mb-4">Sobre el Proyecto</h2>
-                    <p className="text-gray-700 leading-relaxed mb-6">{proyecto.detalles}</p>
-
-                    <h3 className="text-xl font-bold mb-3">Tecnologías utilizadas</h3>
-                    <ul className="list-disc list-inside mb-6">
-                        {proyecto.tecnologias.map((tec, idx) => (
-                            <li key={idx} className="text-gray-700">{tec}</li>
-                        ))}
-                    </ul>
-                </div>
-
-                <div className="bg-white p-6 rounded-lg shadow-md">
-                    <h3 className="text-lg font-bold mb-4">¿Interesado en un proyecto similar?</h3>
-                    <p className="text-gray-600 mb-4">
-                        Contactanos para recibir asesoría personalizada y cotización sin compromiso.
-                    </p>
-                    <Link 
-                     href="/cotizar"
-                     className="inline-block w-full text-center bg-primary text-white py-2 rounded-md hover:bg-secondary transition-colors"> 
-                     Solicitar cotizacion 
-                    </Link>
-                </div>
-            </div>
-        </div>
-       </div> 
+        </div> 
     );
 }
