@@ -17,6 +17,13 @@ interface Cotizacion {
   codigo_unico: string;
 }
 
+const formatNumber = (value: number): string => {
+  return new Intl.NumberFormat('es-CO', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
 export default function AdminCotizacionesPage() {
   const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,24 +86,23 @@ export default function AdminCotizacionesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
         <NavBar />
         <div className="max-w-7xl mx-auto px-4 py-12">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Gestión de Cotizaciones</h1>
-              <p className="text-gray-600 mt-1">Cargando cotizaciones desde la base de datos...</p>
+              <h1 className="text-3xl font-bold text-white">Gestión de Cotizaciones</h1>
+              <p className="text-gray-300 mt-1">Cargando cotizaciones desde la base de datos...</p>
             </div>
             <Link
               href="/admin"
-              className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition"
+              className="bg-primary hover:bg-secondary text-blue-600 px-4 py-2 rounded-md transition-colors"
             >
               Volver
             </Link>
           </div>
-
           <div className="flex items-center justify-center py-16">
-            <div className="text-xl text-gray-700">Cargando cotizaciones...</div>
+            <div className="text-white text-xl">Cargando cotizaciones...</div>
           </div>
         </div>
       </div>
@@ -104,95 +110,94 @@ export default function AdminCotizacionesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
       <NavBar />
 
       <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="flex items-start justify-between gap-4 mb-8">
+        <div className="flex justify-between items-start gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Gestión de Cotizaciones</h1>
-            <p className="text-gray-600 mt-1">Se muestran todas las cotizaciones de la base de datos.</p>
+            <h1 className="text-3xl font-bold text-white">Gestión de Cotizaciones</h1>
+            <p className="text-gray-300 mt-1">Se muestran todas las cotizaciones de la base de datos.</p>
           </div>
 
           <Link
             href="/admin"
-            className="inline-flex items-center rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-700 transition"
-          >
+            className="bg-primary hover:bg-secondary text-blue-400 px-4 py-2 rounded-md transition-colors">
             Volver
           </Link>
         </div>
 
         {error ? (
-          <div className="rounded-xl bg-red-50 border border-red-200 p-6 text-red-700 mb-6">
+          <div className="rounded-lg bg-red-900/30 border border-red-500 p-6 text-red-200">
             {error}
           </div>
         ) : cotizaciones.length === 0 ? (
-          <div className="rounded-2xl bg-white p-10 shadow-sm border border-gray-100 text-center">
-            <p className="text-gray-500 text-lg">No hay cotizaciones registradas</p>
+          <div className="rounded-lg p-10 text-center" style={{ backgroundColor: '#1e2939' }}>
+            <p className="text-gray-300 text-lg">No hay cotizaciones registradas</p>
           </div>
         ) : (
-          <div className="rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden">
+          <div className="rounded-lg shadow-sm overflow-hidden" style={{ backgroundColor: '#1e2939'}}>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-800">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
                       Código
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
                       Cliente
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
                       Email
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
                       Fecha
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
                       Total
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
                       Estado
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
                 </thead>
 
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-700">
                   {cotizaciones.map((cotizacion) => (
-                    <tr key={cotizacion.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <tr key={cotizacion.id} className="hover:bg-gray-800/50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                         {cotizacion.codigo_unico}
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                         {cotizacion.nombre_cliente}
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                         {cotizacion.email_cliente}
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                         {new Date(cotizacion.fecha_cotizacion).toLocaleDateString()}
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${Number(cotizacion.total).toFixed(2)}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        ${formatNumber(cotizacion.total)}
                       </td>
 
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span
                           className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
                             cotizacion.estado === 'vigente'
-                              ? 'bg-green-100 text-green-800'
+                              ? 'bg-green-900/50  text-green-300'
                               : cotizacion.estado === 'aprobada'
-                              ? 'bg-blue-100 text-blue-800'
+                              ? 'bg-blue-900/50  text-blue-300'
                               : cotizacion.estado === 'convertida'
-                              ? 'bg-purple-100 text-purple-800'
-                              : 'bg-red-100 text-red-800'
+                              ? 'bg-purple-900/50  text-purple-300'
+                              : 'bg-red-900/50  text-red-300'
                           }`}
                         >
                           {cotizacion.estado}
@@ -202,7 +207,7 @@ export default function AdminCotizacionesPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => verDetalles(cotizacion.codigo_unico)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-blue-400 hover:text-blue-300"
                         >
                           Ver Detalles
                         </button>
@@ -218,20 +223,20 @@ export default function AdminCotizacionesPage() {
 
       {/* Modal de detalles */}
       {showModal && selectedCotizacion && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center">
+          <div className="rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: '#1e2939'}}>
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold">Detalle de cotización</h2>
+                <h2 className="text-2xl font-bold text-white">Detalle de cotización</h2>
                 <button
                   onClick={closeModal}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                  className="text-gray-400 hover:text-gray-200 text-2xl"
                 >
                   ×
                 </button>
               </div>
               
-              <div className="mb-4">
+              <div className="mb-4 space-y-1 text-gray-200">
                 <p><strong>Código:</strong> {selectedCotizacion.codigo_unico}</p>
                 <p><strong>Cliente:</strong> {selectedCotizacion.nombre_cliente}</p>
                 <p><strong>Email:</strong> {selectedCotizacion.email_cliente}</p>
@@ -240,32 +245,33 @@ export default function AdminCotizacionesPage() {
                 <p><strong>Fecha:</strong> {new Date(selectedCotizacion.fecha_cotizacion).toLocaleDateString()}</p>
               </div>
 
-              <h3 className="font-bold mb-2">Productos</h3>
-              <table className="w-full mb-4">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="p-2 text-left">Producto</th>
-                    <th className="p-2 text-left">Medidas</th>
-                    <th className="p-2 text-left">Cantidad</th>
-                    <th className="p-2 text-left">Precio</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedCotizacion.detalles?.map((det: any, i: number) => (
-                    <tr key={i} className="border-b">
-                      <td className="p-2">{det.descripcion}</td>
-                      <td className="p-2">
-                        {det.medida_largo && `${det.medida_largo}x${det.medida_ancho} cm`}
-                      </td>
-                      <td className="p-2">{det.cantidad}</td>
-                      <td className="p-2">${det.subtotal}</td>
+              <h3 className="font-bold text-white mb-2">Productos</h3>
+              <div className='overflow-x-auto'>
+                <table className="w-full mb-4">
+                  <thead className="bg-gray-800">
+                    <tr>
+                      <th className="p-2 text-left text-xs font-medium text-gray-300">Producto</th>
+                      <th className="p-2 text-left text-xs font-medium text-gray-300">Medidas</th>
+                      <th className="p-2 text-left text-xs font-medium text-gray-300">Cantidad</th>
+                      <th className="p-2 text-left text-xs font-medium text-gray-300">Precio</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              <div className="text-right">
-                <p className="text-xl font-bold text-primary">Total: ${selectedCotizacion.total}</p>
+                  </thead>
+                  <tbody className='divide-y divide-gray-700'>
+                    {selectedCotizacion.detalles?.map((det: any, i: number) => (
+                      <tr key={i} className="text-gray-200">
+                        <td className="p-2">{det.descripcion}</td>
+                        <td className="p-2">
+                          {det.medida_largo && `${det.medida_largo}x${det.medida_ancho} cm`}
+                        </td>
+                        <td className="p-2">{det.cantidad}</td>
+                        <td className="p-2">${formatNumber(det.subtotal)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="text-right pt-4 border-t border-gray-700">
+                <p className="text-xl font-bold text-primary">Total: ${formatNumber(selectedCotizacion.total)}</p>
               </div>
             </div>
           </div>

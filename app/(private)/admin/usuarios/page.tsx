@@ -62,88 +62,88 @@ export default function AdminUsuariosPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
         <NavBar />
         <div className="flex items-center justify-center py-12">
-          <div className="text-xl">Cargando usuarios...</div>
+          <div className="text-white text-xl">Cargando usuarios...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
       <NavBar />
       <div className="max-w-7xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold mb-8">Gestión de Usuarios</h1>
+        <h1 className="text-3xl font-bold text-white mb-8">Gestión de Usuarios</h1>
 
         {usuarios.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No hay usuarios registrados</p>
+            <p className="text-gray-300 text-lg">No hay usuarios registrados</p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="rounded-lg shadow-md overflow-hidden" style={{ backgroundColor: '#1e2939'}}>
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
+                <thead className="bg-gray-800">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                       Nombre
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                       Email
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                       Teléfono
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                       Rol
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                       Estado
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="divide-y divide-gray-700">
                   {usuarios.map((usuario) => (
-                    <tr key={usuario.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <tr key={usuario.id} className="hover:bg-gray-800/50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                         {usuario.nombre}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                         {usuario.email}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                         {usuario.telefono || 'N/A'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                         {usuario.rol}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           usuario.aprobado
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
+                            ? 'bg-green-900/50 text-green-300'
+                            : 'bg-yellow-900/50 text-yellow-300'
                         }`}>
                           {usuario.aprobado ? 'Aprobado' : 'Pendiente'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-3">
                         {!usuario.aprobado && (
                           <button
                             onClick={() => aprobarUsuario(usuario.id)}
-                            className="text-green-600 hover:text-green-900 mr-4"
+                            className="text-green-400 hover:text-green-300"
                           >
                             Aprobar
                           </button>
                         )}
-                        <button className="text-blue-600 hover:text-blue-900 mr-4">
+                        <button className="text-blue-400 hover:text-blue-300">
                           Editar
                         </button>
-                        <button className="text-red-600 hover:text-red-900">
+                        <button className="text-red-400 hover:text-red-300">
                           Eliminar
                         </button>
                       </td>

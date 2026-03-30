@@ -32,46 +32,46 @@ export default function AdminPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
       <NavBar />
       <div className="max-w-7xl mx-auto px-4">
-        <h1 className="text-3xl font-bold mb-8">Panel de Administración</h1>
+        <h1 className="text-3xl font-bold text-white mb-8">Panel de Administración</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-lg text-gray-600 mb-2">Usuarios</h3>
+          <div className="p-6 rounded-lg shadow-md" style={{ backgroundColor: '#1e2939'}}>
+            <h3 className="text-lg text-gray-300 mb-2">Usuarios</h3>
             <p className="text-3xl font-bold text-primary">{stats.usuarios}</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-lg text-gray-600 mb-2">Productos</h3>
+          <div className="p-6 rounded-lg shadow-md" style={{ backgroundColor: '#1e2939'}}>
+            <h3 className="text-lg text-gray-300 mb-2">Productos</h3>
             <p className="text-3xl font-bold text-primary">{stats.productos}</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-lg text-gray-600 mb-2">Cotizaciones</h3>
+          <div className="p-6 rounded-lg shadow-md" style={{ backgroundColor: '#1e2939'}}>
+            <h3 className="text-lg text-gray-300 mb-2">Cotizaciones</h3>
             <p className="text-3xl font-bold text-primary">{stats.cotizaciones}</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h3 className="text-lg text-gray-600 mb-2">Pedidos</h3>
+          <div className="p-6 rounded-lg shadow-md" style={{ backgroundColor: '#1e2939'}}>
+            <h3 className="text-lg text-gray-300 mb-2">Pedidos</h3>
             <p className="text-3xl font-bold text-primary">{stats.pedidos}</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Link href="/admin/usuarios" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <h2 className="text-xl font-bold mb-2">Gestionar Usuarios</h2>
-            <p className="text-gray-600">Ver, aprobar y administrar usuarios</p>
+          <Link href="/admin/usuarios" className="p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow" style={{ backgroundColor: '#1e2939'}}>
+            <h2 className="text-xl font-bold text-blue-300 mb-2">Gestionar Usuarios</h2>
+            <p className="text-gray-300">Ver, aprobar y administrar usuarios</p>
           </Link>
-          <Link href="/admin/productos" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <h2 className="text-xl font-bold mb-2">Gestionar Productos</h2>
-            <p className="text-gray-600">Crear, editar y desactivar productos</p>
+          <Link href="/admin/productos" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow" style={{ backgroundColor: '#1e2939'}}>
+            <h2 className="text-xl font-bold text-blue-300 mb-2">Gestionar Productos</h2>
+            <p className="text-gray-300">Crear, editar y desactivar productos</p>
           </Link>
-          <Link href="/admin/cotizaciones" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <h2 className="text-xl font-bold mb-2">Ver Cotizaciones</h2>
-            <p className="text-gray-600">Listado completo de cotizaciones</p>
+          <Link href="/admin/cotizaciones" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow" style={{ backgroundColor: '#1e2939'}}>
+            <h2 className="text-xl font-bold text-blue-300 mb-2">Ver Cotizaciones</h2>
+            <p className="text-gray-300">Listado completo de cotizaciones</p>
           </Link>
-          <Link href="/admin/pedidos" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-            <h2 className="text-xl font-bold mb-2">Gestionar Pedidos</h2>
-            <p className="text-gray-600">Ver y actualizar estado de pedidos</p>
+          <Link href="/admin/pedidos" className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow" style={{ backgroundColor: '#1e2939'}}>
+            <h2 className="text-xl font-bold text-blue-300 mb-2">Gestionar Pedidos</h2>
+            <p className="text-gray-300">Ver y actualizar estado de pedidos</p>
           </Link>
         </div>
       </div>
