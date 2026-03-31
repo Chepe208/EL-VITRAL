@@ -32,7 +32,7 @@ export default function AdminPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
+    <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
       <NavBar />
       <div className="max-w-7xl mx-auto px-4">
         <h1 className="text-3xl font-bold text-white mb-8">Panel de Administración</h1>

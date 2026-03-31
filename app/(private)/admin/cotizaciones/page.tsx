@@ -86,7 +86,7 @@ export default function AdminCotizacionesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
+      <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
         <NavBar />
         <div className="max-w-7xl mx-auto px-4 py-12">
           <div className="flex justify-between items-center mb-8">
@@ -110,7 +110,7 @@ export default function AdminCotizacionesPage() {
   }
 
   return (
-    <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
+    <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
       <NavBar />
 
       <div className="max-w-7xl mx-auto px-4 py-12">

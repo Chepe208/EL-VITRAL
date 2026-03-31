@@ -32,6 +32,7 @@ export default function MisPedidosPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   useEffect(() => {
     fetch('/api/pedidos')
@@ -43,6 +44,7 @@ export default function MisPedidosPage() {
   }, []);
 
   const verDetallesPedido = async (pedidoId: number) => {
+    setLoadingDetails(true);
     try {
       const res = await fetch(`/api/pedidos/${pedidoId}`);
       if (!res.ok) {

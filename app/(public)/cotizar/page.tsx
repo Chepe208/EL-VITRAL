@@ -51,6 +51,7 @@ export default function CotizarPage() {
   });
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<{ codigo: string } | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
 
   useEffect(() => {
     fetch('/api/productos')
@@ -64,10 +65,21 @@ export default function CotizarPage() {
     }
   }, [productoInicial]);
 
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => {
+        if (res.ok) {
+          setIsLoggedIn(true);
+        } else {
+          setIsLoggedIn(false);
+        }
+      })
+      .catch(() => setIsLoggedIn(false));
+  }, []);
+
   const calcularPrecio = (producto: Producto, datos: any): number => {
     const precioBase = producto.precio_base;
     if (producto.tipo === 'vidrio' || producto.tipo === 'espejo') {
-      // Precio por metro cuadrado: precio_base es el precio por m²
       const area = (parseFloat(datos.medida_largo) * parseFloat(datos.medida_ancho)) / 10000; // Convertir cm² a m²
       return precioBase * area * datos.cantidad;
     }
@@ -163,9 +175,37 @@ export default function CotizarPage() {
 
   const totales = calcularTotales();
 
+  if (isLoggedIn === null) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
+        <NavBar />
+        <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md" style={{ backgroundColor: '#1e2939'}}>
+          <h2 className="text-3xl font-bold text-white text-center mb-6">Cargando...</h2>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
+        <NavBar />
+        <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md" style={{ backgroundColor: '#1e2939'}}>
+          <h2 className="text-3xl font-bold text-white text-center mb-6">Cotización</h2>
+          <div className="bg-yellow-900/30 border border-yellow-500 p-6 rounded-md text-center">
+            <p className="text-xl text-white mb-4">Debe iniciar sesión para poder hacer la cotización.</p>
+            <button onClick={() => router.push('/login')} className="bg-primary text-blue-400 py-2 px-4 rounded-md hover:bg-secondary transition-colors">
+              Iniciar Sesión
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (resultado) {
     return (
-      <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
+      <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
         <NavBar />
         <div className="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md" style={{ backgroundColor: '#1e2939'}}>
           <h2 className="text-3xl font-bold text-white text-center mb-6">¡Cotización creada!</h2>
@@ -186,7 +226,7 @@ export default function CotizarPage() {
   }
 
   return (
-    <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
+    <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
       <NavBar />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <h1 className="text-4xl font-bold text-white mb-8">Cotización en Línea</h1>

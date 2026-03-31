@@ -15,7 +15,6 @@ interface Producto {
     precio_base: number;
 }
 
-//Funcion para formatear precios en pesos colombianos
 const formatPrice = (value: number): string => {
     return new Intl.NumberFormat('es-CO', {
         minimumFractionDigits: 0,
@@ -38,18 +37,15 @@ export default function CatalogoPage() {
         });
     }, []);
 
-    // Aplicar filtros desde URL
     useEffect(() => {
         const tipo = searchParams.get('tipo');
         const aplicacion = searchParams.get('aplicacion');
         const servicio = searchParams.get('servicio');
 
         if (tipo) {
-            // Mapear tipos de vidrio a tipos de productos
             const tipoMapeado = tipo === 'templado' || tipo === 'laminado' ? 'vidrio' : tipo;
             setFiltro(tipoMapeado);
         } else if (aplicacion || servicio) {
-            // Por ahora, mostrar todos si hay aplicación o servicio
             setFiltro('todos');
         }
     }, [searchParams]);
@@ -68,12 +64,12 @@ export default function CatalogoPage() {
     }
 
     return (
-        <div className="min-h-screen py-12" style={{ backgroundColor:'#101828' }}>
+        <div className="min-h-screen" style={{ backgroundColor:'#101828' }}>
             <NavBar />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <h1 className="text-4xl font-bold text-white mb-8">Catálogo de Productos</h1>
 
-                {/* Mostrar filtros aplicados desde búsqueda */}
+                {}
                 {(searchParams.get('tipo') || searchParams.get('aplicacion') || searchParams.get('servicio')) && (
                     <div className="mb-6 p-4 bg-blue-100 dark:bg-blue-900 rounded-lg">
                         <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-200 mb-2">

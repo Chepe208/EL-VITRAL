@@ -19,6 +19,7 @@ export default function CotizacionesPage() {
   const [loading, setLoading] = useState(true);
   const [selectedCotizacion, setSelectedCotizacion] = useState<Cotizacion | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [loadingDetails, setLoadingDetails] = useState(false);
 
   useEffect(() => {
     fetchCotizaciones();
@@ -55,7 +56,7 @@ export default function CotizacionesPage() {
 
       if (res.ok) {
         alert('Cotización convertida a pedido exitosamente');
-        fetchCotizaciones(); // Recargar la lista
+        fetchCotizaciones(); 
       } else {
         const error = await res.json();
         alert(error.error || 'Error al convertir la cotización');
@@ -67,6 +68,7 @@ export default function CotizacionesPage() {
   };
 
   const verDetalles = async (codigo: string) => {
+    setLoadingDetails(true);
     try {
       const res = await fetch(`/api/cotizaciones/${encodeURIComponent(codigo)}`);
       if (!res.ok) {

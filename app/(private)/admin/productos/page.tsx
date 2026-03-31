@@ -49,7 +49,6 @@ export default function AdminProductosPage() {
     }
   };
 
-  // 🗑 ELIMINAR / HABILITAR
   const eliminarProducto = async (id: number) => {
     const confirmar = confirm('¿Seguro que quieres eliminar este producto?');
 
@@ -73,7 +72,6 @@ export default function AdminProductosPage() {
     }
   };
 
-  // 🔄 HABILITAR
   const habilitarProducto = async (id: number) => {
     const confirmar = confirm('¿Seguro que quieres habilitar este producto?');
 
@@ -97,7 +95,6 @@ export default function AdminProductosPage() {
     }
   };
 
-  // ✏️ EDITAR
   const editarProducto = async (producto: Producto) => {
     const nuevoNombre = prompt('Nuevo nombre:', producto.nombre);
     if (!nuevoNombre) return;
@@ -132,7 +129,7 @@ export default function AdminProductosPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
+      <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
         <NavBar />
         <div className="flex items-center justify-center py-12">
           <div className="text-white text-xl">Cargando Productos...</div>
@@ -142,7 +139,7 @@ export default function AdminProductosPage() {
   }
 
   return (
-    <div className="min-h-screen py-12" style={{ backgroundColor: '#101828' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#101828' }}>
       <NavBar />
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex justify-between items-center mb-8">

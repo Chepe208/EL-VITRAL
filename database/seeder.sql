@@ -1,48 +1,3 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
---
--- Servidor: 127.0.0.1
--- Tiempo de generación: 30-03-2026 a las 05:11:22
--- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.2.12
-
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
-
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
-
---
--- Base de datos: `el_vitral_db`
---
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `productos`
---
-
-CREATE TABLE `productos` (
-  `id` int(11) NOT NULL,
-  `nombre` varchar(100) NOT NULL,
-  `tipo` enum('vidrio','espejo','aluminio','herraje','insumo') NOT NULL,
-  `descripcion` text DEFAULT NULL,
-  `imagen_url` varchar(255) DEFAULT NULL,
-  `unidad_medida` varchar(20) DEFAULT NULL,
-  `precio_base` decimal(10,2) NOT NULL,
-  `stock_minimo` int(11) DEFAULT 5,
-  `activo` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `productos`
---
-
 INSERT INTO `productos` (`id`, `nombre`, `tipo`, `descripcion`, `imagen_url`, `unidad_medida`, `precio_base`, `stock_minimo`, `activo`) VALUES
 (203, 'Vidrio Claro 3mm', 'vidrio', 'Vidrio transparente de 3mm de espesor', 'https://media.istockphoto.com/id/2148805322/photo/glass-sheets-super-clear-float-glass-panels.jpg?s=612x612&w=0&k=20&c=4ICd6ne9n7J1WfBydbF5PU5SyqrGT1O9oPAasgvxNoo=', 'm2', 35000.00, 20, 1),
 (204, 'Vidrio Claro 4mm', 'vidrio', 'Vidrio transparente de 4mm de espesor', 'https://media.istockphoto.com/id/961823942/photo/sheets-of-factory-manufacturing-tempered-clear-float-glass-panels-cut-to-size.jpg?s=612x612&w=0&k=20&c=u3g9k-Ek1aCj6wvJQKsW66Xmhp97hrf35Af3qhKS8Ww=', 'm2', 45000.00, 20, 1),
@@ -60,35 +15,10 @@ INSERT INTO `productos` (`id`, `nombre`, `tipo`, `descripcion`, `imagen_url`, `u
 (216, 'Espejo Color Ahumado', 'espejo', 'Espejo con acabado ahumado, 4mm', 'https://tse4.mm.bing.net/th/id/OIP.F7ldjHp69HJNRe6QTKKtpQHaHa?rs=1&pid=ImgDetMain&o=7&rm=3', 'm2', 200000.00, 8, 1),
 (217, 'Kit Herrajes Ventana', 'herraje', 'Juego de herrajes para ventana corrediza', 'https://aone-holding.com/wp-content/uploads/2021/09/types-of-fittings-five.jpg', 'unidad', 25000.00, 20, 1),
 (218, 'Kit Herrajes Puerta', 'herraje', 'Juego de herrajes para puerta de aluminio', 'https://m.media-amazon.com/images/I/81d6qFQwV1L._AC_SL1500_.jpg', 'unidad', 45000.00, 15, 1),
-(219, 'Silicona Transparente', '', 'Silicona para sellado de vidrios', 'https://th.bing.com/th/id/OIP.rI3f8LLoX7rYzrgcWS4CEQHaHa?w=187&h=187&c=7&r=0&o=7&dpr=1.1&pid=1.7&rm=3', 'unidad', 12000.00, 30, 1),
+(219, 'Silicona Transparente', 'herraje', 'Silicona para sellado de vidrios', 'https://th.bing.com/th/id/OIP.rI3f8LLoX7rYzrgcWS4CEQHaHa?w=187&h=187&c=7&r=0&o=7&dpr=1.1&pid=1.7&rm=3', 'unidad', 12000.00, 30, 1),
 (220, 'Manija Aluminio', 'herraje', 'Manija de aluminio cromado', 'https://media.falabella.com/sodimacCO/648107/w=1035,h=832,f=webp,fit=contain,q=85', 'unidad', 18000.00, 25, 1),
 (221, 'Bisagra Invisible', 'herraje', 'Bisagra invisible para puertas de vidrio', 'https://media.istockphoto.com/id/1199529908/photo/glass-door-with-iron-hinges-close-up-of-fastenings-for-a-transparent-door.jpg?s=612x612&w=0&k=20&c=-sV0uEn875QjJX2YdESIOba1L2fwWzFsodHzJ-CO44w=', 'unidad', 35000.00, 20, 1),
 (222, 'Perfil Aluminio Blanco', 'aluminio', 'Perfil de aluminio color blanco (6m)', 'https://th.bing.com/th/id/OIP.4bZDXB0sh_Om4eKDWoVP3gHaFj?w=259&h=194&c=7&r=0&o=7&dpr=1.1&pid=1.7&rm=3', 'metro', 45000.00, 30, 1),
 (223, 'Perfil Aluminio Negro', 'aluminio', 'Perfil de aluminio color negro mate', 'https://media.istockphoto.com/id/988644714/photo/several-aluminum-profile.jpg?s=612x612&w=0&k=20&c=HqdF5qn1pm3ydZfEUj6kxyCuBgT75XDdIxFH8vVQP4U=', 'metro', 52000.00, 25, 1),
 (224, 'Cinta Doble Faz', 'insumo', 'Cinta de doble faz para instalación de espejos', 'https://media.falabella.com/sodimacCO/3029973/w=1036,h=832,f=webp,fit=contain,q=85', 'unidad', 15000.00, 30, 1),
 (225, 'Espuma Selladora', 'insumo', 'Espuma de poliuretano para sellado de ventanas', 'https://media.falabella.com/sodimacCO/679187/w=1036,h=832,f=webp,fit=contain,q=85', 'metro', 8000.00, 25, 1);
-
---
--- Índices para tablas volcadas
---
-
---
--- Indices de la tabla `productos`
---
-ALTER TABLE `productos`
-  ADD PRIMARY KEY (`id`);
-
---
--- AUTO_INCREMENT de las tablas volcadas
---
-
---
--- AUTO_INCREMENT de la tabla `productos`
---
-ALTER TABLE `productos`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=226;
-COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

@@ -62,7 +62,7 @@ export default function AdminUsuariosPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
+      <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
         <NavBar />
         <div className="flex items-center justify-center py-12">
           <div className="text-white text-xl">Cargando usuarios...</div>
