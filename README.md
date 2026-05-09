@@ -1,3 +1,7 @@
+# Bienvenio a EL VITRAL
+EL VITRAL es una plataforma web para digitalizar la operación comercial de una empresa de vidrios, espejos, aluminio y herrajes. El sistema centraliza procesos que antes se hacían en papel o por llamadas: catálogo, cotizaciones, gestión de pedidos, inventario y administración de usuarios.
+
+
 ## Empezar proyecto
 
 Primero, haz correr el servidor con:
@@ -32,8 +36,3 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
    - Habilita la API de Maps JavaScript
    - Crea una API Key con restricciones apropiadas
 6. Pega la API Key en `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` en `.env.local`
-
-### Configuración de ubicación
-7. Edita `lib/config.ts` para configurar la ubicación de tu negocio:
-   - Cambia `address`, `phone`, `email`, `hours`
-   - Actualiza las coordenadas `lat` y `lng` con la ubicación exacta
