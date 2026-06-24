@@ -6,12 +6,17 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "migrate": "echo \"Run your DB migrations here\""
+    "migrate": "echo \"Run your DB migrations here\"",
+    "test": "jest"
   },
   "dependencies": {
-    "mysql2": "^3.22.5",
-    "jsonwebtoken": "^9.0.3",
     "bcryptjs": "^3.0.3",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.22.5",
     "pdfkit": "^0.19.1"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "supertest": "^7.2.2"
   }
 }
