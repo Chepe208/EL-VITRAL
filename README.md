@@ -5,8 +5,8 @@ EL VITRAL es una plataforma web para digitalizar la operación comercial de una 
 Este repositorio se reorganizó en tres carpetas: `frontend/`, `backend/` y `docs/`.
 
 Resumen
-- `frontend/` — aplicación Next.js (interfaz).
-- `backend/` — helpers, API y scripts de base de datos.
+- `frontend/` — aplicación Next.js con framework de Tailwind, con lenguajes de TypeScript y Javascript.
+- `backend/` — API, Node.js y scripts de base de datos.
 - `docs/` — documentación y PDFs consolidados.
 
 Instalación (rápida)
