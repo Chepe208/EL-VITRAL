@@ -9,9 +9,9 @@
     "migrate": "echo \"Run your DB migrations here\""
   },
   "dependencies": {
-    "mysql2": "^3.20.0",
+    "mysql2": "^3.22.5",
     "jsonwebtoken": "^9.0.3",
     "bcryptjs": "^3.0.3",
-    "pdfkit": "^0.18.0"
+    "pdfkit": "^0.19.1"
   }
 }
