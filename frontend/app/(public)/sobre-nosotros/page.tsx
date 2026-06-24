@@ -1,18 +1,13 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { testConnection } from '../../../lib/db';
 
 export default async function SobreNosotros() {
-    const dbConnected = await testConnection().catch(() => false);
-    const dbStatusText = dbConnected ? 'Conexión a la base de datos OK ✅' : 'No se pudo conectar a la base de datos ⚠️';
 
     return (
         <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-                <Link href="/" className="inline-flex items-center text-primary hover:text-secondary mb-8">
-                Volver a Inicio
-                </Link>
+                
 
                 <div className="rounded-lg shadow-md overflow-hidden" style={{backgroundColor: '#1e2939'}}>
                     <div className="relative h-64 md:h-80">
@@ -32,7 +27,7 @@ export default async function SobreNosotros() {
                         <h2 className="text-2xl font-bold text-white mb-4">
                             Mas de 10 años dando forma a tus ideas
                         </h2>
-                        <p className="text-sm font-medium text-yellow-200 mb-6">{dbStatusText}</p>
+
                         <p className="text-gray-100 leading-relaxed mb-6">
                             En <strong>El Vitral</strong> somos una empresa familiar con más de diez años de experiencia en el sector del vidrio y la cristalería. Nacimos con la pasión por transformar espacios a través de la luz y la transparencia, ofreciendo soluciones a medida para proyectos residenciales, comerciales e industriales.
                         </p>

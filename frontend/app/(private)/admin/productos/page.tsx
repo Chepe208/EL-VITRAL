@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import NavBar from '@/components/NavBar';
 
 interface Producto {
   id: number;
@@ -156,7 +155,6 @@ export default function AdminProductosPage() {
   if (loading) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: '#101828' }}>
-        <NavBar />
         <div className="flex items-center justify-center py-12">
           <div className="text-white text-xl">Cargando Productos...</div>
         </div>
@@ -166,7 +164,6 @@ export default function AdminProductosPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#101828' }}>
-      <NavBar />
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-8">
           <div>

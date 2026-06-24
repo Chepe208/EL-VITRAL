@@ -1,8 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import NavBar from '@/components/NavBar';
-
+  
 interface Producto {
   id: number;
   nombre: string;
@@ -16,11 +15,20 @@ interface Producto {
 interface ItemCotizacion {
   producto_id: number;
   nombre: string;
+  tipo: string;
   cantidad: number;
   medida_largo?: number;
   medida_ancho?: number;
   grosor?: number;
   precio: number;
+}
+
+interface Usuario {
+  id: number;
+  nombre: string;
+  email: string;
+  telefono?: string;
+  direccion?: string;
 }
 
 const formatNumber = (value: number): string => {
@@ -35,6 +43,7 @@ export default function CotizarPage() {
   const [productoInicial, setProductoInicial] = useState<string | null>(null);
 
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cliente, setCliente] = useState({
     nombre: '',
     email: '',
@@ -67,6 +76,31 @@ export default function CotizarPage() {
   }, []);
 
   useEffect(() => {
+    fetch('/api/auth/me')
+      .then(res => {
+        if (res.ok) {
+          return res.json();
+        } else {
+          setIsLoggedIn(false);
+          throw new Error('No autenticado');
+        }
+      })
+      .then(data => {
+        setIsLoggedIn(true);
+        setUsuario(data);
+        setCliente({
+          nombre: data.nombre || '',
+          email: data.email || '',
+          telefono: data.telefono || '',
+          direccion: data.direccion || ''
+        });
+      })
+      .catch(() => {
+        setIsLoggedIn(false);
+      });
+  }, []);
+
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setProductoInicial(params.get('producto'));
   }, []);
@@ -77,26 +111,15 @@ export default function CotizarPage() {
     }
   }, [productoInicial]);
 
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => {
-        if (res.ok) {
-          setIsLoggedIn(true);
-        } else {
-          setIsLoggedIn(false);
-        }
-      })
-      .catch(() => setIsLoggedIn(false));
-  }, []);
-
-  const calcularPrecio = (producto: Producto, datos: any): number => {
+  const calcularPrecio = (producto: Producto, datos: { cantidad: number, medida_largo?: number, medida_ancho?: number }): number => {
     const precioBase = producto.precio_base;
     if (producto.tipo === 'vidrio' || producto.tipo === 'espejo') {
-      const area = (parseFloat(datos.medida_largo) * parseFloat(datos.medida_ancho)) / 10000; 
+      const area = (datos.medida_largo && datos.medida_ancho) ? (datos.medida_largo * datos.medida_ancho) / 10000 : 0;
       return precioBase * area * datos.cantidad;
     }
     if (producto.tipo === 'aluminio') {
-      return precioBase * (parseFloat(datos.medida_largo) / 100) * datos.cantidad; 
+      const largo = datos.medida_largo || 0;
+      return precioBase * (largo / 100) * datos.cantidad;
     }
     return precioBase * datos.cantidad;
   };
@@ -109,7 +132,7 @@ export default function CotizarPage() {
     const producto = productos.find(p => p.id === parseInt(productoActual.producto_id));
     if (!producto) return;
 
-    if ((producto.tipo === 'vidrio' || producto.tipo === 'espejo') && 
+    if ((producto.tipo === 'vidrio' || producto.tipo === 'espejo') &&
         (!productoActual.medida_largo || !productoActual.medida_ancho)) {
       showModal('Para vidrios y espejos debe ingresar largo y ancho.');
       return;
@@ -126,13 +149,15 @@ export default function CotizarPage() {
     }
 
     const precio = calcularPrecio(producto, {
-      ...productoActual,
-      cantidad: productoActual.cantidad
+      cantidad: productoActual.cantidad,
+      medida_largo: parseFloat(productoActual.medida_largo) || undefined,
+      medida_ancho: parseFloat(productoActual.medida_ancho) || undefined
     });
 
     setItems([...items, {
       producto_id: producto.id,
       nombre: producto.nombre,
+      tipo: producto.tipo,
       cantidad: productoActual.cantidad,
       medida_largo: parseFloat(productoActual.medida_largo) || undefined,
       medida_ancho: parseFloat(productoActual.medida_ancho) || undefined,
@@ -146,6 +171,28 @@ export default function CotizarPage() {
       medida_ancho: '',
       grosor: ''
     });
+  };
+
+  const actualizarItem = (index: number, campo: string, valor: any) => {
+    const nuevosItems = [...items];
+    const item = nuevosItems[index];
+    if (!item) return;
+
+    (item as any)[campo] = valor;
+
+    if (campo === 'cantidad' || campo === 'medida_largo' || campo === 'medida_ancho') {
+      const producto = productos.find(p => p.id === item.producto_id);
+      if (producto) {
+        const nuevoPrecio = calcularPrecio(producto, {
+          cantidad: item.cantidad,
+          medida_largo: item.medida_largo,
+          medida_ancho: item.medida_ancho
+        });
+        item.precio = nuevoPrecio;
+      }
+    }
+
+    setItems(nuevosItems);
   };
 
   const eliminarItem = (index: number) => {
@@ -204,7 +251,6 @@ export default function CotizarPage() {
   if (isLoggedIn === null) {
     return (
       <div className="min-h-screen bg-slate-950">
-        <NavBar />
         <div className="max-w-3xl mx-auto mt-20 p-8 rounded-3xl shadow-2xl bg-slate-900/90 border border-slate-700">
           <h2 className="text-3xl font-bold text-white text-center mb-4">Cargando tu cotización...</h2>
           <p className="text-center text-slate-400">Un momento mientras preparamos los productos disponibles.</p>
@@ -216,7 +262,6 @@ export default function CotizarPage() {
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-slate-950">
-        <NavBar />
         <div className="max-w-3xl mx-auto mt-20 p-8 rounded-3xl shadow-2xl bg-slate-900/90 border border-slate-700">
           <h2 className="text-3xl font-bold text-white text-center mb-6">Inicia sesión para cotizar</h2>
           <div className="bg-amber-900/30 border border-amber-500 p-6 rounded-3xl text-center">
@@ -236,7 +281,6 @@ export default function CotizarPage() {
   if (resultado) {
     return (
       <div className="min-h-screen bg-slate-950">
-        <NavBar />
         <div className="max-w-3xl mx-auto mt-20 p-8 rounded-3xl shadow-2xl bg-slate-900/90 border border-slate-700">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-white mb-4">¡Cotización creada!</h2>
@@ -260,8 +304,7 @@ export default function CotizarPage() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <NavBar />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pb-32 md:pb-10">
         <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-8 shadow-2xl">
           <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
             <div>
@@ -277,6 +320,7 @@ export default function CotizarPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Datos del cliente */}
             <div className="lg:col-span-1 rounded-3xl bg-slate-950/90 border border-slate-800 p-6">
               <h2 className="text-xl font-semibold text-white mb-4">Datos del cliente</h2>
               <div className="space-y-4">
@@ -311,6 +355,7 @@ export default function CotizarPage() {
               </div>
             </div>
 
+            {/* Agregar productos y lista */}
             <div className="lg:col-span-2 rounded-3xl bg-slate-950/90 border border-slate-800 p-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                 <div>
@@ -376,11 +421,12 @@ export default function CotizarPage() {
 
               <button
                 onClick={agregarItem}
-                className="mt-6 w-full rounded-2xl bg-primary px-6 py-3 text-white font-semibold hover:bg-secondary transition-colors"
+                className="mt-6 w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-500 px-6 py-3 text-white font-semibold hover:from-cyan-600 hover:to-blue-600 transition-all duration-300 shadow-lg shadow-cyan-500/30"
               >
                 Añadir al presupuesto
               </button>
 
+              {/* Lista de productos agregados con edición */}
               {items.length > 0 && (
                 <div className="mt-8 rounded-3xl bg-slate-950/90 border border-slate-800 p-6">
                   <div className="mb-4 flex items-center justify-between">
@@ -388,24 +434,71 @@ export default function CotizarPage() {
                     <span className="text-sm text-slate-400">{items.length} ítems</span>
                   </div>
                   <div className="space-y-4">
-                    {items.map((item, index) => (
-                      <div key={index} className="rounded-3xl border border-slate-800 bg-slate-900 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                          <p className="font-semibold text-white">{item.nombre}</p>
-                          <p className="text-sm text-slate-400">{item.medida_largo ? `${item.medida_largo}x${item.medida_ancho || '-'} cm` : 'Sin medidas'} • {item.cantidad} und</p>
+                    {items.map((item, index) => {
+                      const mostrarLargo = item.tipo === 'vidrio' || item.tipo === 'espejo' || item.tipo === 'aluminio';
+                      const mostrarAncho = item.tipo === 'vidrio' || item.tipo === 'espejo';
+                      return (
+                        <div key={index} className="rounded-3xl border border-slate-800 bg-slate-900 p-4 flex flex-col gap-4">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <p className="font-semibold text-white text-lg">{item.nombre}</p>
+                            <button
+                              onClick={() => eliminarItem(index)}
+                              className="rounded-full bg-red-500/10 px-3 py-1 text-red-400 hover:bg-red-500/20 text-sm"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 items-end">
+                            {mostrarLargo && (
+                              <div>
+                                <label className="text-xs text-slate-400 block mb-1">Largo (cm)</label>
+                                <input
+                                  type="number"
+                                  value={item.medida_largo || ''}
+                                  onChange={(e) => actualizarItem(index, 'medida_largo', parseFloat(e.target.value) || undefined)}
+                                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                                />
+                              </div>
+                            )}
+                            {mostrarAncho && (
+                              <div>
+                                <label className="text-xs text-slate-400 block mb-1">Ancho (cm)</label>
+                                <input
+                                  type="number"
+                                  value={item.medida_ancho || ''}
+                                  onChange={(e) => actualizarItem(index, 'medida_ancho', parseFloat(e.target.value) || undefined)}
+                                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                                />
+                              </div>
+                            )}
+                            <div>
+                              <label className="text-xs text-slate-400 block mb-1">Cantidad</label>
+                              <input
+                                type="number"
+                                min="1"
+                                value={item.cantidad}
+                                onChange={(e) => actualizarItem(index, 'cantidad', parseInt(e.target.value) || 1)}
+                                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white placeholder-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-slate-400 block mb-1">Precio</label>
+                              <p className="text-lg font-bold text-primary">${formatNumber(item.precio)}</p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-lg font-bold text-primary">${formatNumber(item.precio)}</span>
-                          <button
-                            onClick={() => eliminarItem(index)}
-                            className="rounded-full bg-red-500/10 px-3 py-2 text-red-400 hover:bg-red-500/20"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
+
+                  {/* Botón móvil para generar cotización */}
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="mt-6 w-full rounded-2xl bg-green-600 px-4 py-4 text-white font-semibold hover:bg-green-700 transition-colors disabled:bg-slate-700 lg:hidden"
+                  >
+                    {loading ? 'Procesando...' : 'Generar Cotización'}
+                  </button>
                 </div>
               )}
             </div>
@@ -413,28 +506,33 @@ export default function CotizarPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-6 right-6 z-40 hidden md:block">
-        <div className="rounded-3xl bg-slate-950/95 border border-slate-800 p-5 shadow-2xl w-80">
-          <p className="text-sm uppercase tracking-[0.2em] text-slate-400 mb-3">Resumen</p>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-slate-400">
-              <span>Productos</span>
-              <span className="text-white font-semibold">{items.length}</span>
+      {/* Resumen flotante - visible en desktop y móvil */}
+      {items.length > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 border-t border-slate-800 p-4 shadow-2xl lg:bottom-6 lg:left-auto lg:right-6 lg:rounded-3xl lg:border lg:w-80 lg:p-5">
+          <div className="flex items-center justify-between lg:block">
+            <div className="flex items-center gap-4 lg:block">
+              <p className="text-sm uppercase tracking-[0.2em] text-slate-400 lg:mb-3">Resumen</p>
+              <div className="flex items-center gap-6 lg:block lg:space-y-3">
+                <div className="flex items-center gap-2 lg:flex lg:justify-between">
+                  <span className="text-slate-400 text-sm">Productos</span>
+                  <span className="text-white font-semibold">{items.length}</span>
+                </div>
+                <div className="flex items-center gap-2 lg:flex lg:justify-between">
+                  <span className="text-slate-400 text-sm">Total</span>
+                  <span className="text-white font-semibold">${formatNumber(totales.total)}</span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center justify-between text-slate-400">
-              <span>Total</span>
-              <span className="text-white font-semibold">${formatNumber(totales.total)}</span>
-            </div>
+            <button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="rounded-2xl bg-green-600 px-6 py-3 text-white font-semibold hover:bg-green-700 transition-colors disabled:bg-slate-700 lg:w-full lg:mt-6"
+            >
+              {loading ? 'Procesando...' : 'Generar Cotización'}
+            </button>
           </div>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="mt-6 w-full rounded-2xl bg-green-600 px-4 py-3 text-white font-semibold hover:bg-green-700 transition-colors disabled:bg-slate-700"
-          >
-            {loading ? 'Procesando...' : 'Generar Cotización'}
-          </button>
         </div>
-      </div>
+      )}
 
       {showAlertModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6 backdrop-blur-sm">

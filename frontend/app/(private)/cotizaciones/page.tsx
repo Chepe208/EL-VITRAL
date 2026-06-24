@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import NavBar from '@/components/NavBar';
 
 interface Cotizacion {
   id: number;
@@ -86,7 +85,6 @@ export default function CotizacionesPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#101828'}}>
-        <NavBar />
           <div className="text-white text-xl">Cargando cotizaciones...</div>
       </div>
     );
@@ -94,7 +92,6 @@ export default function CotizacionesPage() {
 
   return (
     <div className="min-h-screen" style= {{ backgroundColor: '#101828'}}>
-      <NavBar />
       <div className="max-w-7xl mx-auto px-4">
         <h1 className="text-3xl font-bold text-white mb-8">Mis Cotizaciones</h1>
 

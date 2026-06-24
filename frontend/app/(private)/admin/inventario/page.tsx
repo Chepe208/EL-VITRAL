@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import NavBar from '@/components/NavBar';
 
 interface MovimientoInventario {
   id: number;
@@ -105,7 +104,6 @@ export default function InventarioPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#101828' }}>
-      <NavBar />
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="flex justify-between items-center mb-8">
           <div>

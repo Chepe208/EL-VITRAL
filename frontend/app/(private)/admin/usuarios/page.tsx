@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import NavBar from '@/components/NavBar';
+import Link from 'next/link'; // Importar Link
 
 interface Usuario {
   id: number;
@@ -51,7 +51,6 @@ export default function AdminUsuariosPage() {
       });
 
       if (res.ok) {
-        // Actualizar el estado local
         setUsuarios(usuarios.map(user =>
           user.id === id ? { ...user, aprobado: true } : user
         ));
@@ -64,7 +63,6 @@ export default function AdminUsuariosPage() {
   if (loading) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
-        <NavBar />
         <div className="flex items-center justify-center py-12">
           <div className="text-white text-xl">Cargando usuarios...</div>
         </div>
@@ -74,10 +72,17 @@ export default function AdminUsuariosPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
-      <NavBar />
       <div className="max-w-7xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold text-white mb-8">Gestión de Usuarios</h1>
-
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold text-white">Gestión de Usuarios</h1>
+          <Link
+            href="/admin"
+            className="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-md transition-colors"
+          >
+            Volver
+          </Link>
+        </div>
+        
         {usuarios.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-gray-300 text-lg">No hay usuarios registrados</p>
@@ -147,7 +152,6 @@ export default function AdminUsuariosPage() {
                             Aprobar
                           </button>
                         )}
-                        
                         <button className="text-red-400 hover:text-red-300">
                           Eliminar
                         </button>

@@ -46,9 +46,7 @@ export default async function ProyectoDetalle({ params }: PageProps) {
     return (
        <div className="min-h-screen py-12" style={{ backgroundColor: '#101828'}}>
            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-               <Link href="/" className="inline-flex items-center text-primary hover:text-secondary mb-8">
-                   Volver al Inicio        
-               </Link>
+        
                
                <div className="rounded-lg shadow-md overflow-hidden" style={{ backgroundColor: '#1e2939'}}>
                    <div className="p-8 md:p-12">

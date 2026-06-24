@@ -95,6 +95,7 @@ export default function Navbar() {
     closeMenu();
     setTimeout(() => {
       setMessage('');
+       window.location.href = '/'; // Recarga y redirige al home
       router.push('/');
     }, 1400);
   };

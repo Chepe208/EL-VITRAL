@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import NavBar from '@/components/NavBar';
 
 interface User {
   id: number;
@@ -80,7 +79,6 @@ export default function EditarPerfilPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950">
-        <NavBar />
         <div className="flex min-h-[calc(100vh-80px)] items-center justify-center px-4 py-10">
           <div className="rounded-3xl bg-slate-900/90 border border-slate-800 p-10 text-center shadow-2xl">
             <p className="text-white">Cargando información...</p>
@@ -92,7 +90,6 @@ export default function EditarPerfilPage() {
 
   return (
     <>
-      <NavBar />
       <div className="min-h-screen bg-slate-950 py-12">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="rounded-[2rem] border border-slate-800 bg-slate-900/95 p-8 shadow-2xl shadow-slate-950/20">

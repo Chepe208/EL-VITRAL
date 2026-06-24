@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import NavBar from '@/components/NavBar';
 
 interface User {
   id: number;
@@ -59,7 +58,6 @@ export default function PerfilPage() {
 
   return (
     <>
-      <NavBar />
       <div className="min-h-screen bg-slate-950 py-14">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
           <div className="grid gap-10 lg:grid-cols-[320px_1fr]">

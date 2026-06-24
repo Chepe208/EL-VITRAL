@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import NavBar from '@/components/NavBar';
 import ReviewsCarousel from '@/components/ReviewsCarousel';
 import LocationSection from '@/components/LocationSection';
 import { useRouter } from 'next/navigation';
@@ -34,7 +33,6 @@ export default function LandingPage() {
   return (
     <>
       { }
-      <NavBar />
 
       { }
       <div className="relative h-[600px] flex items-center justify-center">

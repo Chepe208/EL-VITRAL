@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import NavBar from '@/components/NavBar';
 
 export default function AdminPage() {
   const [stats, setStats] = useState({
@@ -33,7 +32,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#101828'}}>
-      <NavBar />
       <div className="max-w-7xl mx-auto px-4">
         <h1 className="text-3xl font-bold text-white mb-8">Panel de Administración</h1>
 
@@ -55,8 +53,10 @@ export default function AdminPage() {
             <p className="text-3xl font-bold text-primary">{stats.pedidos}</p>
           </div>
         </div>
+        
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          
           <Link href="/admin/usuarios" className="p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow" style={{ backgroundColor: '#1e2939'}}>
             <h2 className="text-xl font-bold text-blue-300 mb-2">Gestionar Usuarios</h2>
             <p className="text-gray-300">Ver, aprobar y administrar usuarios</p>
