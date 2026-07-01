@@ -1268,9 +1268,13 @@ async function handleRequest(req, res) {
     if (pathname === '/api/admin/pedidos' && method === 'GET') {
       const pedidos = await query(`
         SELECT
-          p.*, u.nombre AS usuario_nombre, u.email AS usuario_email
+          p.*,
+          u.nombre AS usuario_nombre,
+          u.email AS usuario_email,
+          c.nombre_cliente
         FROM pedidos p
         LEFT JOIN usuarios u ON u.id = p.usuario_id
+        LEFT JOIN cotizaciones c ON c.id = p.cotizacion_id
         ORDER BY p.fecha_pedido DESC
       `);
       return sendJSON(res, 200, Array.isArray(pedidos) ? pedidos.map(formatNumericRow) : []);
@@ -1282,10 +1286,32 @@ async function handleRequest(req, res) {
         return sendJSON(res, 400, { error: 'ID de pedido inválido' });
       }
 
+      const pedidoRows = await query('SELECT * FROM pedidos WHERE id = ?', [id]);
+      if (!Array.isArray(pedidoRows) || pedidoRows.length === 0) {
+        return sendJSON(res, 404, { error: 'Pedido no encontrado' });
+      }
+      const pedidoActual = formatNumericRow(pedidoRows[0]);
+
       const body = await parseBody(req);
+      const nuevoEstado = body.estado ? sanitizeString(body.estado) : '';
+      const nuevoPago = body.pago ? sanitizeString(body.pago) : '';
+      const fechaEntrega = body.fecha_entrega ? sanitizeString(body.fecha_entrega) : '';
+
+      if (nuevoEstado === 'listo' && !fechaEntrega && !pedidoActual.fecha_entrega) {
+        return sendJSON(res, 400, { error: 'Debe indicar la fecha de entrega al marcar el pedido como listo' });
+      }
+
+      if (nuevoEstado === 'entregado') {
+        const fechaFinal = fechaEntrega || pedidoActual.fecha_entrega;
+        if (!fechaFinal) {
+          return sendJSON(res, 400, { error: 'No se puede marcar como entregado sin fecha de entrega' });
+        }
+      }
+
       const updates = {};
-      if (body.estado) updates.estado = sanitizeString(body.estado);
-      if (body.pago) updates.pago = sanitizeString(body.pago);
+      if (nuevoEstado) updates.estado = nuevoEstado;
+      if (nuevoPago) updates.pago = nuevoPago;
+      if (fechaEntrega) updates.fecha_entrega = fechaEntrega;
 
       const fields = [];
       const params = [];
@@ -1524,7 +1550,10 @@ async function handleRequest(req, res) {
       if (!userData) {
         return sendJSON(res, 401, { error: 'No autorizado' });
       }
-      const rows = await query('SELECT * FROM pedidos WHERE usuario_id = ? ORDER BY fecha_pedido DESC', [userData.id]);
+      const rows = await query(
+        'SELECT * FROM pedidos WHERE usuario_id = ? ORDER BY fecha_pedido DESC',
+        [Number(userData.id)]
+      );
       return sendJSON(res, 200, Array.isArray(rows) ? rows.map(formatNumericRow) : []);
     }
 
@@ -1535,9 +1564,8 @@ async function handleRequest(req, res) {
       }
       const body = await parseBody(req);
       const cotizacion_id = Number(body.cotizacion_id);
-      const fecha_entrega = sanitizeString(body.fecha_entrega || '');
-      if (Number.isNaN(cotizacion_id) || !fecha_entrega) {
-        return sendJSON(res, 400, { error: 'ID de cotización y fecha de entrega son obligatorios' });
+      if (Number.isNaN(cotizacion_id)) {
+        return sendJSON(res, 400, { error: 'ID de cotización es obligatorio' });
       }
       const rows = await query('SELECT * FROM cotizaciones WHERE id = ?', [cotizacion_id]);
       if (!Array.isArray(rows) || rows.length === 0) {
@@ -1547,9 +1575,21 @@ async function handleRequest(req, res) {
       if (!isAdmin(userData) && cotizacion.usuario_id !== userData.id) {
         return sendJSON(res, 403, { error: 'No autorizado' });
       }
+
+      let ownerId = cotizacion.usuario_id;
+      if (!ownerId && cotizacion.email_cliente) {
+        const userRows = await query('SELECT id FROM usuarios WHERE email = ?', [cotizacion.email_cliente]);
+        if (Array.isArray(userRows) && userRows.length > 0) {
+          ownerId = userRows[0].id;
+        }
+      }
+      if (!ownerId) {
+        ownerId = userData.id;
+      }
+
       const result = await query(
         'INSERT INTO pedidos (cotizacion_id, usuario_id, fecha_entrega, estado, pago, total) VALUES (?, ?, ?, ?, ?, ?)',
-        [cotizacion_id, userData.id, fecha_entrega, 'pendiente', 'pendiente', cotizacion.total]
+        [cotizacion_id, ownerId, null, 'pendiente', 'pendiente', cotizacion.total]
       );
       await query('UPDATE cotizaciones SET estado = ? WHERE id = ?', ['convertida', cotizacion_id]);
       return sendJSON(res, 201, { message: 'Pedido creado', id: result.insertId });
@@ -1574,7 +1614,7 @@ async function handleRequest(req, res) {
         return sendJSON(res, 404, { error: 'Pedido no encontrado' });
       }
       const pedido = formatNumericRow(rows[0]);
-      if (!isAdmin(userData) && pedido.usuario_id !== userData.id) {
+      if (!isAdmin(userData) && Number(pedido.usuario_id) !== Number(userData.id)) {
         return sendJSON(res, 403, { error: 'No autorizado' });
       }
       const detalles = await query(
@@ -1603,7 +1643,7 @@ async function handleRequest(req, res) {
         return sendJSON(res, 404, { error: 'Pedido no encontrado' });
       }
       const pedido = formatNumericRow(rows[0]);
-      if (!isAdmin(userData) && pedido.usuario_id !== userData.id) {
+      if (!isAdmin(userData) && Number(pedido.usuario_id) !== Number(userData.id)) {
         return sendJSON(res, 403, { error: 'No autorizado' });
       }
       const detalles = await query(

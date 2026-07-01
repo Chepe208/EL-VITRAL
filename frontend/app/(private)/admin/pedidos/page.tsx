@@ -13,6 +13,7 @@ interface Pedido {
   pago: 'pendiente' | 'pagado' | 'anticipo';
   total: number;
   notas?: string;
+  nombre_cliente?: string;
 }
 
 const estadosOrdenados: Array<Pedido['estado']> = [
@@ -61,7 +62,11 @@ export default function AdminPedidosPage() {
     pedidoId: number;
     nuevoValor: string;
     mensaje: string;
+    fechaEntrega?: string;
   } | null>(null);
+
+  const [showFechaModal, setShowFechaModal] = useState(false);
+  const [fechaEntregaInput, setFechaEntregaInput] = useState('');
 
   useEffect(() => {
     fetchPedidos();
@@ -99,6 +104,25 @@ export default function AdminPedidosPage() {
     const pedido = pedidos.find(p => p.id === pedidoId);
     if (!pedido) return;
 
+    if (nuevoEstado === pedido.estado) return;
+
+    if (nuevoEstado === 'entregado' && !pedido.fecha_entrega) {
+      alert('Debe establecer la fecha de entrega antes de marcar el pedido como entregado. Cambie el estado a "Listo" primero.');
+      return;
+    }
+
+    if (nuevoEstado === 'listo' && !pedido.fecha_entrega) {
+      setConfirmAction({
+        type: 'estado',
+        pedidoId,
+        nuevoValor: nuevoEstado,
+        mensaje: `¿Marcar el pedido #${pedidoId} como listo?`,
+      });
+      setFechaEntregaInput('');
+      setShowFechaModal(true);
+      return;
+    }
+
     setConfirmAction({
       type: 'estado',
       pedidoId,
@@ -126,19 +150,38 @@ export default function AdminPedidosPage() {
     window.open(url, '_blank');
   };
 
+  const confirmarFechaEntrega = () => {
+    if (!fechaEntregaInput) {
+      alert('Debe seleccionar una fecha de entrega');
+      return;
+    }
+
+    setShowFechaModal(false);
+    setConfirmAction((prev) =>
+      prev ? { ...prev, fechaEntrega: fechaEntregaInput } : null
+    );
+    setShowConfirmModal(true);
+  };
+
   const confirmarCambio = async () => {
     if (!confirmAction) return;
 
     try {
+      const payload: Record<string, string> = {
+        [confirmAction.type]: confirmAction.nuevoValor,
+      };
+
+      if (confirmAction.fechaEntrega) {
+        payload.fecha_entrega = confirmAction.fechaEntrega;
+      }
+
       const res = await fetch(`/api/admin/pedidos/${confirmAction.pedidoId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
-        body: JSON.stringify({
-          [confirmAction.type]: confirmAction.nuevoValor
-        })
+        body: JSON.stringify(payload)
       });
 
       if (res.ok) {
@@ -254,6 +297,9 @@ export default function AdminPedidosPage() {
                               Fecha Pedido
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                              Cliente
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
                               Fecha Entrega
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-semibold text-gray-300 uppercase tracking-wider">
@@ -280,6 +326,10 @@ export default function AdminPedidosPage() {
 
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
                                 {new Date(pedido.fecha_pedido).toLocaleDateString()}
+                              </td>
+
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                                {pedido.nombre_cliente || 'Sin nombre'}
                               </td>
 
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -320,7 +370,9 @@ export default function AdminPedidosPage() {
                                       <option value="pendiente">Pendiente</option>
                                       <option value="en_proceso">En proceso</option>
                                       <option value="listo">Listo</option>
-                                      <option value="entregado">Entregado</option>
+                                      <option value="entregado" disabled={!pedido.fecha_entrega}>
+                                        Entregado{!pedido.fecha_entrega ? ' (requiere fecha)' : ''}
+                                      </option>
                                     </select>
                                   </div>
                                   <div>
@@ -355,6 +407,61 @@ export default function AdminPedidosPage() {
           </div>
         )}
       </div>
+
+      {/* Modal de fecha de entrega (al marcar como listo) */}
+      {showFechaModal && confirmAction && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="rounded-lg shadow-xl max-w-md w-full mx-4" style={{ backgroundColor: '#1e2939' }}>
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold text-white">Fecha de entrega</h2>
+                <button
+                  onClick={() => {
+                    setShowFechaModal(false);
+                    setConfirmAction(null);
+                    setFechaEntregaInput('');
+                  }}
+                  className="text-gray-400 hover:text-gray-200 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <p className="text-gray-300 mb-4">
+                Indique la fecha en la que se entregará el pedido #{confirmAction.pedidoId}.
+              </p>
+
+              <label className="block text-sm text-gray-400 mb-2">Fecha de entrega</label>
+              <input
+                type="date"
+                value={fechaEntregaInput}
+                onChange={(e) => setFechaEntregaInput(e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+                className="w-full rounded-md border border-gray-600 bg-gray-800 text-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary mb-6"
+              />
+
+              <div className="flex gap-4 justify-end">
+                <button
+                  onClick={() => {
+                    setShowFechaModal(false);
+                    setConfirmAction(null);
+                    setFechaEntregaInput('');
+                  }}
+                  className="px-6 py-3 bg-slate-600 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors border border-slate-500"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmarFechaEntrega}
+                  className="px-6 py-3 bg-primary hover:bg-secondary text-white font-semibold rounded-lg transition-colors border border-sky-500 shadow-lg shadow-sky-500/25"
+                >
+                  Continuar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de confirmación */}
       {showConfirmModal && confirmAction && (

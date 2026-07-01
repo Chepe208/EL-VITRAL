@@ -41,10 +41,19 @@ export default function MisPedidosPage() {
   const [loadingDetails, setLoadingDetails] = useState(false);
 
   useEffect(() => {
-    fetch('/api/pedidos')
-      .then(res => res.json())
+    fetch('/api/pedidos', { credentials: 'include' })
+      .then(res => {
+        if (!res.ok) {
+          return [];
+        }
+        return res.json();
+      })
       .then(data => {
-        setPedidos(data);
+        setPedidos(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => {
+        setPedidos([]);
         setLoading(false);
       });
   }, []);
@@ -52,7 +61,7 @@ export default function MisPedidosPage() {
   const verDetallesPedido = async (pedidoId: number) => {
     setLoadingDetails(true);
     try {
-      const res = await fetch(`/api/pedidos/${pedidoId}`);
+      const res = await fetch(`/api/pedidos/${pedidoId}`, { credentials: 'include' });
       if (!res.ok) {
         alert('No se pudo cargar el detalle del pedido');
         return;

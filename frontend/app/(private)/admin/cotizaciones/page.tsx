@@ -113,9 +113,9 @@ export default function AdminCotizacionesPage() {
       const res = await fetch('/api/pedidos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           cotizacion_id: cotizacionToConvert.id,
-          fecha_entrega: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         })
       });
 

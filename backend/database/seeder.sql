@@ -22,3 +22,14 @@ INSERT INTO `productos` (`id`, `nombre`, `tipo`, `descripcion`, `imagen_url`, `u
 (223, 'Perfil Aluminio Negro', 'aluminio', 'Perfil de aluminio color negro mate', 'https://media.istockphoto.com/id/988644714/photo/several-aluminum-profile.jpg?s=612x612&w=0&k=20&c=HqdF5qn1pm3ydZfEUj6kxyCuBgT75XDdIxFH8vVQP4U=', 'metro', 52000.00, 25, 1),
 (224, 'Cinta Doble Faz', 'insumo', 'Cinta de doble faz para instalación de espejos', 'https://media.falabella.com/sodimacCO/3029973/w=1036,h=832,f=webp,fit=contain,q=85', 'unidad', 15000.00, 30, 1),
 (225, 'Espuma Selladora', 'insumo', 'Espuma de poliuretano para sellado de ventanas', 'https://media.falabella.com/sodimacCO/679187/w=1036,h=832,f=webp,fit=contain,q=85', 'metro', 8000.00, 25, 1);
+
+UPDATE pedidos p
+JOIN cotizaciones c ON c.id = p.cotizacion_id
+SET p.usuario_id = c.usuario_id
+WHERE c.usuario_id IS NOT NULL AND p.usuario_id != c.usuario_id;
+
+UPDATE pedidos p
+JOIN cotizaciones c ON c.id = p.cotizacion_id
+JOIN usuarios u ON u.email = c.email_cliente
+SET p.usuario_id = u.id
+WHERE c.usuario_id IS NULL;
