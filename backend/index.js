@@ -1,5 +1,8 @@
 const http = require('http');
 const { URL } = require('url');
+const express = require('express');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./swagger');
 
 const { query } = require('./lib/db.js');
 const {
@@ -18,11 +21,746 @@ const {
   generateToken,
   getUserFromRequest,
   isAdmin,
+  requireAdmin,
   verifyToken,
 } = require('./lib/auth.js');
 
 const port = process.env.PORT || 4000;
 const isProduction = process.env.NODE_ENV === 'production';
+
+// Crear app Express solo para Swagger
+const expressApp = express();
+expressApp.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+}));
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Registrar nuevo usuario
+ *     tags:
+ *       - Autenticación
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nombre
+ *               - email
+ *               - password
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *                 example: Juan García
+ *               email:
+ *                 type: string
+ *                 example: juan@example.com
+ *               password:
+ *                 type: string
+ *                 example: micontraseña123
+ *               telefono:
+ *                 type: string
+ *               direccion:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Usuario registrado correctamente
+ *       400:
+ *         description: Faltan datos requeridos
+ *       409:
+ *         description: El correo ya está registrado
+ *
+ * /api/auth/login:
+ *   post:
+ *     summary: Iniciar sesión
+ *     tags:
+ *       - Autenticación
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: juan@example.com
+ *               password:
+ *                 type: string
+ *                 example: micontraseña123
+ *     responses:
+ *       200:
+ *         description: Inicio de sesión exitoso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 token:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: number
+ *                     nombre:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     rol:
+ *                       type: string
+ *       401:
+ *         description: Correo o contraseña incorrectos
+ *       403:
+ *         description: Cuenta inactiva o en espera de aprobación
+ *
+ * /api/auth/logout:
+ *   post:
+ *     summary: Cerrar sesión
+ *     tags:
+ *       - Autenticación
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Sesión cerrada
+ *
+ * /api/auth/me:
+ *   get:
+ *     summary: Obtener datos del usuario autenticado
+ *     tags:
+ *       - Autenticación
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Datos del usuario
+ *       401:
+ *         description: No autorizado
+ *   patch:
+ *     summary: Actualizar datos del usuario
+ *     tags:
+ *       - Autenticación
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               telefono:
+ *                 type: string
+ *               direccion:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Usuario actualizado
+ *       401:
+ *         description: No autorizado
+ *       409:
+ *         description: El correo ya está en uso
+ *
+ * /api/auth/ultimo-acceso:
+ *   post:
+ *     summary: Registrar último acceso del usuario
+ *     tags:
+ *       - Autenticación
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               timestamp:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       200:
+ *         description: Último acceso registrado
+ *
+ * /api/productos:
+ *   get:
+ *     summary: Obtener lista de productos activos
+ *     tags:
+ *       - Productos
+ *     responses:
+ *       200:
+ *         description: Lista de productos activos
+ *
+ * /api/admin/productos:
+ *   get:
+ *     summary: Obtener todos los productos (incluidos inactivos)
+ *     tags:
+ *       - Productos (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista completa de productos
+ *       403:
+ *         description: No tiene permisos de admin
+ *   post:
+ *     summary: Crear nuevo producto
+ *     tags:
+ *       - Productos (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - nombre
+ *               - tipo
+ *               - unidad_medida
+ *               - precio_base
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               descripcion:
+ *                 type: string
+ *               tipo:
+ *                 type: string
+ *                 enum: [vidrio, espejo, aluminio, otro]
+ *               unidad_medida:
+ *                 type: string
+ *               precio_base:
+ *                 type: number
+ *               imagen_url:
+ *                 type: string
+ *               stock:
+ *                 type: number
+ *     responses:
+ *       201:
+ *         description: Producto creado
+ *       400:
+ *         description: Faltan campos requeridos
+ *
+ * /api/admin/productos/{id}:
+ *   patch:
+ *     summary: Actualizar producto
+ *     tags:
+ *       - Productos (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: number
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nombre:
+ *                 type: string
+ *               descripcion:
+ *                 type: string
+ *               tipo:
+ *                 type: string
+ *               precio_base:
+ *                 type: number
+ *               stock:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Producto actualizado
+ *       403:
+ *         description: No tiene permisos de admin
+ *   delete:
+ *     summary: Eliminar producto
+ *     tags:
+ *       - Productos (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: Producto eliminado
+ *       403:
+ *         description: No tiene permisos de admin
+ *
+ * /api/cotizaciones:
+ *   get:
+ *     summary: Obtener cotizaciones del usuario
+ *     tags:
+ *       - Cotizaciones
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de cotizaciones
+ *       401:
+ *         description: No autorizado
+ *   post:
+ *     summary: Crear nueva cotización
+ *     tags:
+ *       - Cotizaciones
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - cliente
+ *               - productos
+ *             properties:
+ *               cliente:
+ *                 type: object
+ *                 required:
+ *                   - nombre
+ *                   - email
+ *                   - telefono
+ *                   - direccion
+ *                 properties:
+ *                   nombre:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *                   telefono:
+ *                     type: string
+ *                   direccion:
+ *                     type: string
+ *               productos:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     producto_id:
+ *                       type: number
+ *                     cantidad:
+ *                       type: number
+ *                     medida_largo:
+ *                       type: number
+ *                     medida_ancho:
+ *                       type: number
+ *     responses:
+ *       201:
+ *         description: Cotización creada
+ *       400:
+ *         description: Faltan datos requeridos
+ *       401:
+ *         description: No autorizado
+ *
+ * /api/cotizaciones/{codigo}:
+ *   get:
+ *     summary: Obtener detalles de una cotización
+ *     tags:
+ *       - Cotizaciones
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: codigo
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Detalles de la cotización
+ *       404:
+ *         description: Cotización no encontrada
+ *
+ * /api/cotizaciones/{codigo}/pdf:
+ *   get:
+ *     summary: Descargar cotización en PDF
+ *     tags:
+ *       - Cotizaciones
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: codigo
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: PDF de la cotización
+ *         content:
+ *           application/pdf: {}
+ *
+ * /api/admin/cotizaciones:
+ *   get:
+ *     summary: Obtener todas las cotizaciones (Admin)
+ *     tags:
+ *       - Cotizaciones (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de todas las cotizaciones
+ *       403:
+ *         description: No tiene permisos de admin
+ *
+ * /api/admin/cotizaciones/{id}/pdf:
+ *   get:
+ *     summary: Descargar cotización en PDF (Admin)
+ *     tags:
+ *       - Cotizaciones (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: PDF de la cotización
+ *       403:
+ *         description: No tiene permisos de admin
+ *
+ * /api/pedidos:
+ *   get:
+ *     summary: Obtener pedidos del usuario
+ *     tags:
+ *       - Pedidos
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de pedidos del usuario
+ *       401:
+ *         description: No autorizado
+ *   post:
+ *     summary: Crear nuevo pedido
+ *     tags:
+ *       - Pedidos
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - cotizacion_id
+ *               - fecha_entrega
+ *             properties:
+ *               cotizacion_id:
+ *                 type: number
+ *               fecha_entrega:
+ *                 type: string
+ *                 format: date
+ *     responses:
+ *       201:
+ *         description: Pedido creado
+ *       400:
+ *         description: Faltan datos requeridos
+ *       404:
+ *         description: Cotización no encontrada
+ *
+ * /api/pedidos/{id}:
+ *   get:
+ *     summary: Obtener detalles de un pedido
+ *     tags:
+ *       - Pedidos
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: Detalles del pedido
+ *       404:
+ *         description: Pedido no encontrado
+ *
+ * /api/pedidos/{id}/pdf:
+ *   get:
+ *     summary: Descargar pedido en PDF
+ *     tags:
+ *       - Pedidos
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: PDF del pedido
+ *         content:
+ *           application/pdf: {}
+ *
+ * /api/admin/pedidos:
+ *   get:
+ *     summary: Obtener todos los pedidos (Admin)
+ *     tags:
+ *       - Pedidos (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de todos los pedidos
+ *       403:
+ *         description: No tiene permisos de admin
+ *
+ * /api/admin/pedidos/{id}:
+ *   patch:
+ *     summary: Actualizar estado del pedido
+ *     tags:
+ *       - Pedidos (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: number
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               estado:
+ *                 type: string
+ *                 enum: [pendiente, en_proceso, listo, entregado]
+ *               pago:
+ *                 type: string
+ *                 enum: [pendiente, pagado]
+ *     responses:
+ *       200:
+ *         description: Pedido actualizado
+ *       403:
+ *         description: No tiene permisos de admin
+ *
+ * /api/admin/pedidos/{id}/pdf:
+ *   get:
+ *     summary: Descargar pedido en PDF (Admin)
+ *     tags:
+ *       - Pedidos (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: number
+ *     responses:
+ *       200:
+ *         description: PDF del pedido
+ *       403:
+ *         description: No tiene permisos de admin
+ *
+ * /api/admin/inventario:
+ *   get:
+ *     summary: Obtener movimientos de inventario
+ *     tags:
+ *       - Inventario (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de movimientos
+ *       403:
+ *         description: No tiene permisos de admin
+ *   post:
+ *     summary: Registrar entrada de inventario
+ *     tags:
+ *       - Inventario (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - producto_id
+ *               - cantidad
+ *             properties:
+ *               producto_id:
+ *                 type: number
+ *               cantidad:
+ *                 type: number
+ *               descripcion:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Movimiento registrado
+ *
+ * /api/admin/usuarios:
+ *   get:
+ *     summary: Obtener lista de usuarios
+ *     tags:
+ *       - Usuarios (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de usuarios
+ *       403:
+ *         description: No tiene permisos de admin
+ *   patch:
+ *     summary: Aprobar usuario
+ *     tags:
+ *       - Usuarios (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id
+ *             properties:
+ *               id:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Usuario aprobado
+ *
+ * /api/agenda/citas:
+ *   get:
+ *     summary: Obtener citas del usuario
+ *     tags:
+ *       - Agenda
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de citas
+ *       401:
+ *         description: No autorizado
+ *   post:
+ *     summary: Crear nueva cita
+ *     tags:
+ *       - Agenda
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - titulo
+ *               - fecha_cita
+ *             properties:
+ *               titulo:
+ *                 type: string
+ *               descripcion:
+ *                 type: string
+ *               fecha_cita:
+ *                 type: string
+ *                 format: date-time
+ *               tipo:
+ *                 type: string
+ *               notas:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Cita creada
+ *   patch:
+ *     summary: Actualizar cita
+ *     tags:
+ *       - Agenda
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: number
+ *               titulo:
+ *                 type: string
+ *               descripcion:
+ *                 type: string
+ *               fecha_cita:
+ *                 type: string
+ *                 format: date-time
+ *               tipo:
+ *                 type: string
+ *               estado:
+ *                 type: string
+ *               notas:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Cita actualizada
+ *   delete:
+ *     summary: Eliminar cita
+ *     tags:
+ *       - Agenda
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - id
+ *             properties:
+ *               id:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Cita eliminada
+ *
+ * /api/admin/agenda:
+ *   get:
+ *     summary: Obtener todas las citas (Admin)
+ *     tags:
+ *       - Agenda (Admin)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lista de todas las citas
+ *       403:
+ *         description: No tiene permisos de admin
+ */
 
 function setHeaders(res, status = 200, contentType = 'application/json') {
   const headers = {
@@ -234,6 +972,11 @@ async function handleRequest(req, res) {
   const pathname = url.pathname;
   const method = req.method;
 
+  // Si es una ruta de Swagger, dejarla pasar a Express
+  if (pathname.startsWith('/api-docs')) {
+    return expressApp(req, res);
+  }
+
   if (method === 'OPTIONS') {
     setHeaders(res, 204);
     res.end();
@@ -244,11 +987,12 @@ async function handleRequest(req, res) {
     return sendJSON(res, 200, {
       status: 'ok',
       message: 'EL VITRAL backend server is running',
-      routes: ['/api/auth/*', '/api/productos', '/api/cotizaciones', '/api/pedidos', '/api/admin/*'],
+      routes: ['/api/auth/*', '/api/productos', '/api/cotizaciones', '/api/pedidos', '/api/admin/*', '/api-docs'],
     });
   }
 
   try {
+    // ===== REGISTER =====
     if (pathname === '/api/auth/register' && method === 'POST') {
       const body = await parseBody(req);
       const nombre = sanitizeString(body.nombre);
@@ -275,6 +1019,7 @@ async function handleRequest(req, res) {
       return sendJSON(res, 201, { message: 'Usuario registrado correctamente' });
     }
 
+    // ===== LOGIN =====
     if (pathname === '/api/auth/login' && method === 'POST') {
       const body = await parseBody(req);
       const email = sanitizeEmail(body.email);
@@ -306,14 +1051,27 @@ async function handleRequest(req, res) {
       const token = generateToken({ id: user.id, rol: user.rol, nombre: user.nombre, email: user.email });
       const cookie = createCookie(token);
       res.setHeader('Set-Cookie', cookie);
-      return sendJSON(res, 200, { message: 'Inicio de sesión exitoso' });
+      
+      // 🔥 DEVOLVER EL TOKEN PARA BEARER AUTH
+      return sendJSON(res, 200, { 
+        message: 'Inicio de sesion exitoso',
+        token: token,
+        user: {
+          id: user.id,
+          nombre: user.nombre,
+          email: user.email,
+          rol: user.rol
+        }
+      });
     }
 
+    // ===== LOGOUT =====
     if (pathname === '/api/auth/logout' && method === 'POST') {
       res.setHeader('Set-Cookie', createExpiredCookie());
       return sendJSON(res, 200, { message: 'Sesión cerrada' });
     }
 
+    // ===== GET ME =====
     if (pathname === '/api/auth/me' && method === 'GET') {
       const userData = getUserFromRequest(req);
       if (!userData) {
@@ -328,6 +1086,7 @@ async function handleRequest(req, res) {
       return sendJSON(res, 200, rows[0]);
     }
 
+    // ===== UPDATE ME =====
     if (pathname === '/api/auth/me' && method === 'PATCH') {
       const userData = getUserFromRequest(req);
       if (!userData) {
@@ -358,6 +1117,7 @@ async function handleRequest(req, res) {
       return sendJSON(res, 200, updatedRows[0]);
     }
 
+    // ===== ULTIMO ACCESO =====
     if (pathname === '/api/auth/ultimo-acceso' && method === 'POST') {
       const userData = getUserFromRequest(req);
       if (!userData) {
@@ -374,21 +1134,27 @@ async function handleRequest(req, res) {
       return sendJSON(res, 200, { message: 'Último acceso registrado' });
     }
 
+    // ===== PRODUCTOS (público) =====
     if (pathname === '/api/productos' && method === 'GET') {
       const productos = await getProductList(true);
       return sendJSON(res, 200, productos);
     }
 
+    // ===== ADMIN ROUTES =====
+    // Todas las rutas /api/admin/* quedan protegidas aquí, en un único punto.
+    // El rol de admin se asigna externamente (DB / panel interno); esta API
+    // nunca permite que un usuario se autoasigne o modifique su propio rol.
     const adminPath = pathname.startsWith('/api/admin');
     const parts = extractRouteParts(pathname);
 
     if (adminPath && parts.length >= 2) {
-      const userData = getUserFromRequest(req);
-      if (!userData || !isAdmin(userData)) {
-        return sendJSON(res, 403, { error: 'No autorizado' });
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) {
+        return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       }
     }
 
+    // ===== ADMIN PRODUCTOS =====
     if (pathname === '/api/admin/productos' && method === 'GET') {
       const productos = await getProductList(false);
       return sendJSON(res, 200, productos);
@@ -460,6 +1226,7 @@ async function handleRequest(req, res) {
       }
     }
 
+    // ===== ADMIN COTIZACIONES =====
     if (pathname === '/api/admin/cotizaciones' && method === 'GET') {
       const cotizaciones = await query(`
         SELECT
@@ -477,10 +1244,6 @@ async function handleRequest(req, res) {
         ORDER BY c.fecha_cotizacion DESC
       `);
       return sendJSON(res, 200, Array.isArray(cotizaciones) ? cotizaciones.map(formatNumericRow) : []);
-    }
-
-    if (pathname === '/api/admin/cotizaciones' && method === 'POST') {
-      return sendJSON(res, 404, { error: 'Ruta no disponible' });
     }
 
     if (parts[0] === 'api' && parts[1] === 'admin' && parts[2] === 'cotizaciones' && parts[3] && parts[4] === 'pdf' && method === 'GET') {
@@ -501,6 +1264,7 @@ async function handleRequest(req, res) {
       return sendPDF(res, `cotizacion-${id}.pdf`, (doc) => buildQuotePdf(doc, cotizacion, Array.isArray(detalles) ? detalles.map(formatNumericRow) : []));
     }
 
+    // ===== ADMIN PEDIDOS =====
     if (pathname === '/api/admin/pedidos' && method === 'GET') {
       const pedidos = await query(`
         SELECT
@@ -563,6 +1327,7 @@ async function handleRequest(req, res) {
       return sendPDF(res, `pedido-${id}.pdf`, (doc) => buildPedidoPdf(doc, pedido, Array.isArray(detalles) ? detalles.map(formatNumericRow) : []));
     }
 
+    // ===== ADMIN INVENTARIO =====
     if (pathname === '/api/admin/inventario' && method === 'GET') {
       const movimientos = await query(`
         SELECT i.*, p.nombre AS producto_nombre, u.nombre AS usuario_nombre
@@ -594,6 +1359,7 @@ async function handleRequest(req, res) {
       return sendJSON(res, 201, { message: 'Movimiento registrado' });
     }
 
+    // ===== ADMIN USUARIOS =====
     if (pathname === '/api/admin/usuarios' && method === 'GET') {
       const usuarios = await query('SELECT id, nombre, email, telefono, direccion, rol, aprobado, ultimo_acceso FROM usuarios ORDER BY fecha_registro DESC');
       return sendJSON(res, 200, Array.isArray(usuarios) ? usuarios.map(formatNumericRow) : []);
@@ -609,6 +1375,7 @@ async function handleRequest(req, res) {
       return sendJSON(res, 200, { message: 'Usuario aprobado' });
     }
 
+    // ===== COTIZACIONES =====
     if (pathname === '/api/cotizaciones' && method === 'POST') {
       const userData = getUserFromRequest(req);
       if (!userData) {
@@ -751,6 +1518,7 @@ async function handleRequest(req, res) {
       });
     }
 
+    // ===== PEDIDOS =====
     if (pathname === '/api/pedidos' && method === 'GET') {
       const userData = getUserFromRequest(req);
       if (!userData) {
@@ -845,6 +1613,179 @@ async function handleRequest(req, res) {
       return sendPDF(res, `pedido-${pedidoId}.pdf`, (doc) => buildPedidoPdf(doc, pedido, Array.isArray(detalles) ? detalles.map(formatNumericRow) : []));
     }
 
+    // ===== CHAT ROUTES =====
+    if (pathname === '/api/chat' && method === 'GET') {
+      const userData = getUserFromRequest(req);
+      if (!userData) {
+        return sendJSON(res, 401, { error: 'No autorizado' });
+      }
+
+      const rows = await query(
+        'SELECT id, usuario_id, contenido, remitente, leido, fecha_envio FROM mensajes_chat WHERE usuario_id = ? ORDER BY fecha_envio DESC LIMIT 50',
+        [userData.id]
+      );
+      return sendJSON(res, 200, Array.isArray(rows) ? rows.map(formatNumericRow).reverse() : []);
+    }
+
+    if (pathname === '/api/chat' && method === 'POST') {
+      const userData = getUserFromRequest(req);
+      if (!userData) {
+        return sendJSON(res, 401, { error: 'No autorizado' });
+      }
+
+      const body = await parseBody(req);
+      const contenido = sanitizeString(body.contenido || '');
+      if (!contenido) {
+        return sendJSON(res, 400, { error: 'El contenido del mensaje es obligatorio' });
+      }
+
+      const result = await query(
+        'INSERT INTO mensajes_chat (usuario_id, contenido, remitente) VALUES (?, ?, ?)',
+        [userData.id, contenido, 'usuario']
+      );
+
+      return sendJSON(res, 201, { id: result.insertId, mensaje: 'Mensaje enviado' });
+    }
+
+    if (pathname === '/api/chat/marcar-leido' && method === 'PATCH') {
+      const userData = getUserFromRequest(req);
+      if (!userData) {
+        return sendJSON(res, 401, { error: 'No autorizado' });
+      }
+
+      const body = await parseBody(req);
+      const messageId = Number(body.id);
+      if (!messageId) {
+        return sendJSON(res, 400, { error: 'ID de mensaje es obligatorio' });
+      }
+
+      await query(
+        'UPDATE mensajes_chat SET leido = true WHERE id = ? AND usuario_id = ?',
+        [messageId, userData.id]
+      );
+
+      return sendJSON(res, 200, { mensaje: 'Mensaje marcado como leído' });
+    }
+
+    // ===== AGENDA ROUTES =====
+    if (pathname === '/api/agenda/citas' && method === 'GET') {
+      const userData = getUserFromRequest(req);
+      if (!userData) {
+        return sendJSON(res, 401, { error: 'No autorizado' });
+      }
+
+      let query_str = 'SELECT id, usuario_id, titulo, descripcion, fecha_cita, tipo, estado, notas, fecha_creacion FROM citas_agenda WHERE usuario_id = ? ORDER BY fecha_cita ASC';
+      let params = [userData.id];
+
+      if (isAdmin(userData)) {
+        query_str = 'SELECT id, usuario_id, titulo, descripcion, fecha_cita, tipo, estado, notas, fecha_creacion FROM citas_agenda ORDER BY fecha_cita ASC';
+        params = [];
+      }
+
+      const rows = await query(query_str, params);
+      return sendJSON(res, 200, Array.isArray(rows) ? rows.map(formatNumericRow) : []);
+    }
+
+    if (pathname === '/api/agenda/citas' && method === 'POST') {
+      const userData = getUserFromRequest(req);
+      if (!userData) {
+        return sendJSON(res, 401, { error: 'No autorizado' });
+      }
+
+      const body = await parseBody(req);
+      const titulo = sanitizeString(body.titulo || '');
+      const descripcion = sanitizeString(body.descripcion || '');
+      const fecha_cita = body.fecha_cita ? new Date(body.fecha_cita) : null;
+      const tipo = body.tipo || 'otro';
+      const notas = sanitizeString(body.notas || '');
+
+      if (!titulo || !fecha_cita || Number.isNaN(fecha_cita.getTime())) {
+        return sendJSON(res, 400, { error: 'Título y fecha de cita son obligatorios' });
+      }
+
+      const result = await query(
+        'INSERT INTO citas_agenda (usuario_id, titulo, descripcion, fecha_cita, tipo, estado, notas) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [userData.id, titulo, descripcion || null, fecha_cita, tipo, 'pendiente', notas || null]
+      );
+
+      return sendJSON(res, 201, { id: result.insertId, mensaje: 'Cita creada exitosamente' });
+    }
+
+    if (pathname === '/api/agenda/citas' && method === 'PATCH') {
+      const userData = getUserFromRequest(req);
+      if (!userData) {
+        return sendJSON(res, 401, { error: 'No autorizado' });
+      }
+
+      const body = await parseBody(req);
+      const citaId = Number(body.id);
+      const titulo = sanitizeString(body.titulo || '');
+      const descripcion = sanitizeString(body.descripcion || '');
+      const fecha_cita = body.fecha_cita ? new Date(body.fecha_cita) : null;
+      const tipo = body.tipo || 'otro';
+      const estado = body.estado || 'pendiente';
+      const notas = sanitizeString(body.notas || '');
+
+      if (!citaId || !titulo || !fecha_cita) {
+        return sendJSON(res, 400, { error: 'ID, título y fecha son obligatorios' });
+      }
+
+      const rows = await query('SELECT usuario_id FROM citas_agenda WHERE id = ?', [citaId]);
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return sendJSON(res, 404, { error: 'Cita no encontrada' });
+      }
+
+      if (!isAdmin(userData) && rows[0].usuario_id !== userData.id) {
+        return sendJSON(res, 403, { error: 'No autorizado' });
+      }
+
+      await query(
+        'UPDATE citas_agenda SET titulo = ?, descripcion = ?, fecha_cita = ?, tipo = ?, estado = ?, notas = ? WHERE id = ?',
+        [titulo, descripcion || null, fecha_cita, tipo, estado, notas || null, citaId]
+      );
+
+      return sendJSON(res, 200, { mensaje: 'Cita actualizada exitosamente' });
+    }
+
+    if (pathname === '/api/agenda/citas' && method === 'DELETE') {
+      const userData = getUserFromRequest(req);
+      if (!userData) {
+        return sendJSON(res, 401, { error: 'No autorizado' });
+      }
+
+      const body = await parseBody(req);
+      const citaId = Number(body.id);
+
+      if (!citaId) {
+        return sendJSON(res, 400, { error: 'ID de cita es obligatorio' });
+      }
+
+      const rows = await query('SELECT usuario_id FROM citas_agenda WHERE id = ?', [citaId]);
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return sendJSON(res, 404, { error: 'Cita no encontrada' });
+      }
+
+      if (!isAdmin(userData) && rows[0].usuario_id !== userData.id) {
+        return sendJSON(res, 403, { error: 'No autorizado' });
+      }
+
+      await query('DELETE FROM citas_agenda WHERE id = ?', [citaId]);
+      return sendJSON(res, 200, { mensaje: 'Cita eliminada exitosamente' });
+    }
+
+    // ===== ADMIN AGENDA =====
+    if (pathname === '/api/admin/agenda' && method === 'GET') {
+      try {
+        const rows = await query(
+          'SELECT id, usuario_id, titulo, descripcion, fecha_cita, tipo, estado, notas, fecha_creacion FROM citas_agenda ORDER BY fecha_cita DESC'
+        );
+        return sendJSON(res, 200, Array.isArray(rows) ? rows.map(formatNumericRow) : []);
+      } catch (error) {
+        console.error('Error fetching admin agenda:', error);
+        return sendJSON(res, 500, { error: 'Error al cargar la agenda: ' + error.message });
+      }
+    }
+
     return sendJSON(res, 404, { error: 'Ruta no encontrada' });
   } catch (error) {
     console.error('Request error:', error);
@@ -859,6 +1800,7 @@ const server = http.createServer((req, res) => {
 if (process.env.NODE_ENV !== 'test') {
   server.listen(port, () => {
     console.log(`Servidor corriendo en puerto ${port}`);
+    console.log(`📚 Swagger docs disponible en http://localhost:${port}/api-docs`);
   });
 }
 

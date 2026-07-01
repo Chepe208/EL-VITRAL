@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Footer from '@/components/Footer'
 import NavBar from '@/components/NavBar'
+import AgendaWidget from '@/components/AgendaWidget'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -28,6 +29,7 @@ export default function RootLayout({
           <main className="flex-1">{children}</main>
           <Footer />
         </div>
+        <AgendaWidget />
       </body>
     </html>
   )
