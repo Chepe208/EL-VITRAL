@@ -6,14 +6,19 @@ export async function handler(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
   const searchParams = req.nextUrl.searchParams;
   
+  console.log('🔍 [Proxy] Incoming request - pathname:', pathname, 'method:', req.method);
+  
   // Extract /api/{path*} and rebuild URL to backend
   const pathMatch = pathname.match(/^\/api\/(.*)$/);
   if (!pathMatch) {
+    console.log('❌ [Proxy] Path does not match /api pattern');
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   const apiPath = pathMatch[1];
   const backendUrl = new URL(`${BACKEND_URL}/api/${apiPath}`);
+  
+  console.log('📍 [Proxy] Backend URL:', backendUrl.toString());
   
   // Preserve query parameters
   searchParams.forEach((value, key) => {

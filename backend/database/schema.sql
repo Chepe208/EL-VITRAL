@@ -97,3 +97,30 @@ CREATE TABLE inventario (
     FOREIGN KEY (pedido_id) REFERENCES pedidos(id),
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
+
+CREATE TABLE mensajes_chat (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    usuario_id INT NOT NULL,
+    contenido TEXT NOT NULL,
+    remitente ENUM('usuario', 'admin') DEFAULT 'usuario',
+    leido BOOLEAN DEFAULT false,
+    fecha_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    INDEX idx_usuario (usuario_id),
+    INDEX idx_fecha (fecha_envio)
+);
+
+CREATE TABLE citas_agenda (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    usuario_id INT NOT NULL,
+    titulo VARCHAR(255) NOT NULL,
+    descripcion TEXT,
+    fecha_cita DATETIME NOT NULL,
+    tipo ENUM('entrega', 'consulta', 'medidas', 'pago', 'otro') DEFAULT 'otro',
+    estado ENUM('pendiente', 'confirmada', 'realizada', 'cancelada') DEFAULT 'pendiente',
+    notas TEXT,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    INDEX idx_usuario (usuario_id),
+    INDEX idx_fecha_cita (fecha_cita)
+);

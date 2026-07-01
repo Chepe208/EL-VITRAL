@@ -42,32 +42,66 @@ function parseCookies(cookieHeader) {
 
   cookieHeader.split(';').forEach((cookie) => {
     const [name, ...rest] = cookie.split('=');
-    cookies[name?.trim()] = rest.join('=').trim();
+    const trimmedName = name?.trim();
+    if (trimmedName) {
+      cookies[trimmedName] = rest.join('=').trim();
+    }
   });
 
   return cookies;
 }
 
-function getUserFromRequest(req) {
+function extractBearerToken(req) {
   const authHeader = req.headers.authorization;
-  let token;
-
-  if (authHeader?.startsWith('Bearer ')) {
-    token = authHeader.substring(7);
-  } else {
-    const cookies = parseCookies(req.headers.cookie || '');
-    token = cookies.token;
-  }
-
-  if (!token) {
+  if (!authHeader) return null;
+  
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') {
     return null;
   }
+  
+  return parts[1];
+}
 
-  return verifyToken(token);
+function getUserFromRequest(req) {
+  // 1. Intentar con Bearer Token (HEADER)
+  const tokenFromBearer = extractBearerToken(req);
+  if (tokenFromBearer) {
+    const decoded = verifyToken(tokenFromBearer);
+    if (decoded) return decoded;
+  }
+  
+  const cookies = parseCookies(req.headers.cookie || '');
+  const tokenFromCookie = cookies.token;
+  if (tokenFromCookie) {
+    const decoded = verifyToken(tokenFromCookie);
+    if (decoded) return decoded;
+  }
+  
+  return null;
 }
 
 function isAdmin(user) {
   return Boolean(user && user.rol === 'admin');
+}
+
+/**
+ * Verifica que la request venga de un usuario autenticado con rol admin.
+ * El rol se asigna externamente (directamente en la base de datos / panel interno);
+ * esta API nunca permite auto-asignarse ni modificar el rol de un usuario.
+ *
+ * @param {import('http').IncomingMessage} req
+ * @returns {{ ok: true, user: object } | { ok: false, status: number, error: string }}
+ */
+function requireAdmin(req) {
+  const user = getUserFromRequest(req);
+  if (!user) {
+    return { ok: false, status: 401, error: 'No autorizado' };
+  }
+  if (!isAdmin(user)) {
+    return { ok: false, status: 403, error: 'No tiene permisos de administrador' };
+  }
+  return { ok: true, user };
 }
 
 module.exports = {
@@ -79,5 +113,7 @@ module.exports = {
   verifyToken,
   getUserFromRequest,
   isAdmin,
+  requireAdmin,
   parseCookies,
+  extractBearerToken, 
 };
