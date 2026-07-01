@@ -782,10 +782,15 @@ async function handleRequest(req, res) {
       if (!userData) {
         return sendJSON(res, 401, { error: 'No autorizado' });
       }
-      const rows = await query(
-        'SELECT * FROM pedidos WHERE usuario_id = ? ORDER BY fecha_pedido DESC',
-        [Number(userData.id)]
-      );
+      const rows = await query(`
+        SELECT
+          p.*,
+          e.id AS encuesta_id
+        FROM pedidos p
+        LEFT JOIN encuestas_satisfaccion e ON e.pedido_id = p.id
+        WHERE p.usuario_id = ?
+        ORDER BY p.fecha_pedido DESC
+      `, [Number(userData.id)]);
       return sendJSON(res, 200, Array.isArray(rows) ? rows.map(formatNumericRow) : []);
     }
 
@@ -883,6 +888,88 @@ async function handleRequest(req, res) {
         [pedido.cotizacion_id]
       );
       return sendPDF(res, `pedido-${pedidoId}.pdf`, (doc) => buildPedidoPdf(doc, pedido, Array.isArray(detalles) ? detalles.map(formatNumericRow) : []));
+    }
+    
+    if (pathname === '/api/encuestas' && method === 'POST') {
+      const userData = getUserFromRequest(req);
+      if (!userData) {
+        return sendJSON(res, 401, { error: 'No autorizado' });
+      }
+
+      const body = await parseBody(req);
+      const pedidoId = Number(body.pedido_id);
+      const calificacion = Number(body.calificacion);
+      const comentario = sanitizeString(body.comentario || '');
+
+      if (Number.isNaN(pedidoId)) {
+        return sendJSON(res, 400, { error: 'Pedido invalido' });
+      }
+
+      if (Number.isNaN(calificacion) || calificacion < 1 || calificacion > 5) {
+        return sendJSON(res, 400, { error: 'La calificacion debe estar entre 1 y 5' });
+      }
+
+      const pedidoRows = await query(
+        'SELECT id, usuario_id, estado FROM pedidos WHERE id = ?',
+        [pedidoId]
+      );
+
+      if (!Array.isArray(pedidoRows) || pedidoRows.length === 0) {
+        return sendJSON(res, 404, { error: 'Pedido no encontrado' });
+      }
+
+      const pedido = formatNumericRow(pedidoRows[0]);
+
+      if (Number(pedido.usuario_id) !== Number(userData.id)) {
+        return sendJSON(res, 403, { error: 'No autorizado' });
+      }
+
+      if (pedido.estado !== 'entregado') {
+        return sendJSON(res, 400, { error: 'Solo puedes responder la encuesta cuando el pedido este entregado' });
+      }
+
+      const encuestaExistente = await query(
+        'SELECT id FROM encuestas_satisfaccion WHERE pedido_id = ?',
+        [pedidoId]
+      );
+
+      if (Array.isArray(encuestaExistente) && encuestaExistente.length > 0) {
+        return sendJSON(res, 409, { error: 'La encuesta de este pedido ya fue respondida' });
+      }
+
+      const result = await query(
+        'INSERT INTO encuestas_satisfaccion (pedido_id, usuario_id, calificacion, comentario) VALUES (?, ?, ?, ?)',
+        [pedidoId, userData.id, calificacion, comentario || null]
+      );
+
+      return sendJSON(res, 201, {
+        message: 'Encuesta registrada correctamente',
+        id: result.insertId,
+      });
+    }
+    
+    if (parts[0] === 'api' && parts[1] === 'encuestas' && parts[2] === 'pedidos' && parts[3] && method === 'GET') {
+      const userData = getUserFromRequest(req);
+      if (!userData) {
+        return sendJSON(res, 401, { error: 'No autorizado' });
+      }
+
+      const pedidoId = Number(parts[3]);
+      if (Number.isNaN(pedidoId)) {
+        return sendJSON(res, 400, { error: 'Pedido invalido' });
+      }
+
+      const rows = await query(`
+        SELECT e.*
+        FROM encuestas_satisfaccion e
+        INNER JOIN pedidos p ON p.id = e.pedido_id
+        WHERE e.pedido_id = ? AND p.usuario_id = ?
+      `, [pedidoId, userData.id]);
+
+      return sendJSON(res, 200, {
+        respondida: Array.isArray(rows) && rows.length > 0,
+        encuesta: Array.isArray(rows) && rows.length > 0 ? formatNumericRow(rows[0]) : null,
+      });
     }
 
     return sendJSON(res, 404, { error: 'Ruta no encontrada' });
