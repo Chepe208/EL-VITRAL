@@ -192,6 +192,14 @@ function isAdmin(user) {
  * @param {import('http').IncomingMessage} req
  * @returns {{ ok: true, user: object } | { ok: false, status: number, error: string }}
  */
+function requireAuth(req) {
+  const user = getUserFromRequest(req);
+  if (!user) {
+    return { ok: false, status: 401, error: 'No autorizado' };
+  }
+  return { ok: true, user };
+}
+
 function requireAdmin(req) {
   const user = getUserFromRequest(req);
   if (!user) {
@@ -214,6 +222,7 @@ module.exports = {
   verifyRefreshToken,
   getUserFromRequest,
   isAdmin,
+  requireAuth,
   requireAdmin,
   parseCookies,
   extractBearerToken,
