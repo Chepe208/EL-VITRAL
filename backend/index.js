@@ -991,6 +991,17 @@ async function getProductList(activeOnly = true) {
   return Array.isArray(rows) ? rows.map(formatNumericRow) : [];
 }
 
+async function getPublicProductList() {
+  const sql = `
+    SELECT id, nombre, tipo, descripcion, imagen_url, unidad_medida, precio_base
+    FROM productos
+    WHERE activo = 1 AND stock > 0
+    ORDER BY id ASC
+  `;
+  const rows = await query(sql);
+  return Array.isArray(rows) ? rows.map(formatNumericRow) : [];
+}
+
 function formatPdfDate(value) {
   return new Date(value).toLocaleDateString('es-CO', {
     year: 'numeric',
@@ -1071,7 +1082,7 @@ async function handleRequest(req, res) {
     return sendJSON(res, 200, {
       status: 'ok',
       message: 'EL VITRAL backend server is running',
-      routes: ['/api/auth/*', '/api/productos', '/api/cotizaciones', '/api/pedidos', '/api/admin/*', '/api-docs'],
+      routes: ['/api/auth/*', '/api/productos', '/api/productos/publicos', '/api/cotizaciones', '/api/pedidos', '/api/admin/*', '/api-docs'],
     });
   }
 
@@ -1431,6 +1442,12 @@ async function handleRequest(req, res) {
     // ===== PRODUCTOS (público) =====
     if (pathname === '/api/productos' && method === 'GET') {
       const productos = await getProductList(true);
+      return sendJSON(res, 200, productos);
+    }
+
+    // ===== PRODUCTOS PÚBLICOS (Solo lectura, sin stock ni datos internos) =====
+    if (pathname === '/api/productos/publicos' && method === 'GET') {
+      const productos = await getPublicProductList();
       return sendJSON(res, 200, productos);
     }
 

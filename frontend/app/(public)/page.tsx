@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import CalculadoraPrecios from '@/components/CalculadoraPrecios';
 import { useRouter } from 'next/navigation';
 
 const FeaturedProjectsCarousel = dynamic(() => import('@/components/FeaturedProjectsCarousel'), {
@@ -123,6 +124,7 @@ export default function LandingPage() {
 
       {/* Reseñas y Ubicación */}
       <ReviewsCarousel />
+      <CalculadoraPrecios />
       <LocationSection />
     </div>
   );
