@@ -1,10 +1,23 @@
 'use client';
 import React, { useState } from 'react';
 import Image from 'next/image';
-import ReviewsCarousel from '@/components/ReviewsCarousel';
-import LocationSection from '@/components/LocationSection';
-import FeaturedProjectsCarousel from '@/components/FeaturedProjectsCarousel';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+
+const FeaturedProjectsCarousel = dynamic(() => import('@/components/FeaturedProjectsCarousel'), {
+  loading: () => <div className="py-20 bg-[#0d131f] flex items-center justify-center text-gray-400 text-sm min-h-[200px]">Cargando proyectos...</div>,
+  ssr: false,
+});
+
+const ReviewsCarousel = dynamic(() => import('@/components/ReviewsCarousel'), {
+  loading: () => <div className="py-20 bg-white dark:bg-gray-800 flex items-center justify-center text-gray-400 text-sm min-h-[200px]">Cargando reseñas...</div>,
+  ssr: false,
+});
+
+const LocationSection = dynamic(() => import('@/components/LocationSection'), {
+  loading: () => <div className="py-20 bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-gray-400 text-sm min-h-[200px]">Cargando ubicación...</div>,
+  ssr: false,
+});
 
 export default function LandingPage() {
   const router = useRouter();
@@ -39,8 +52,8 @@ export default function LandingPage() {
             src="https://forbes.es/wp-content/uploads/2022/03/California-2.jpg"
             alt="Modern Glass Architecture Background"
             fill
+            sizes="100vw"
             className="object-cover"
-            unoptimized
             priority
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0d131f] via-[#0d131f]/70 to-black/60"></div>

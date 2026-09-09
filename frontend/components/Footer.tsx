@@ -1,50 +1,23 @@
 'use client';
 
+import { memo, useCallback } from 'react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
-
-interface User {
-  id: number;
-  nombre: string;
-  rol: string;
-}
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
 
 const linkClass = 'text-gray-400 hover:text-primary text-sm transition-colors';
 
-export default function Footer() {
+function Footer() {
   const currentYear = new Date().getFullYear();
   const router = useRouter();
-  const pathname = usePathname();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, clearUser } = useAuth();
 
-  useEffect(() => {
-    let cancelled = false;
-
-    fetch('/api/auth/me', { credentials: 'include' })
-      .then(async (res) => {
-        if (!res.ok) {
-          if (!cancelled) setUser(null);
-          return;
-        }
-        const data = await res.json();
-        if (!cancelled) setUser(data);
-      })
-      .catch(() => {
-        if (!cancelled) setUser(null);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [pathname]);
-
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    setUser(null);
+    clearUser();
     router.push('/');
     router.refresh();
-  };
+  }, [clearUser, router]);
 
   return (
     <footer style={{ backgroundColor: '#0f1419' }}>
@@ -179,3 +152,5 @@ export default function Footer() {
     </footer>
   );
 }
+
+export default memo(Footer);

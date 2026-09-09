@@ -1,7 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-  
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
+import { formatNumber } from '@/lib/format';
+
 interface Producto {
   id: number;
   nombre: string;
@@ -23,29 +25,14 @@ interface ItemCotizacion {
   precio: number;
 }
 
-interface Usuario {
-  id: number;
-  nombre: string;
-  email: string;
-  telefono?: string;
-  direccion?: string;
-}
-
 const MINIMUM_QUOTE_TOTAL_COP = 10000;
 
-const formatNumber = (value: number): string => {
-  return new Intl.NumberFormat('es-CO', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
-
-export default function CotizarPage() {
+function CotizarContent() {
   const router = useRouter();
-  const [productoInicial, setProductoInicial] = useState<string | null>(null);
+  const { user: usuario, loading: userLoading } = useAuth();
+  const productoInicial = useSearchParams().get('producto');
 
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cliente, setCliente] = useState({
     nombre: '',
     email: '',
@@ -54,7 +41,7 @@ export default function CotizarPage() {
   });
   const [items, setItems] = useState<ItemCotizacion[]>([]);
   const [productoActual, setProductoActual] = useState({
-    producto_id: '',
+    producto_id: productoInicial || '',
     cantidad: 1,
     medida_largo: '',
     medida_ancho: '',
@@ -62,7 +49,7 @@ export default function CotizarPage() {
   });
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState<{ codigo: string } | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [clienteUserId, setClienteUserId] = useState<number | null>(null);
   const [showAlertModal, setShowAlertModal] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
 
@@ -77,41 +64,18 @@ export default function CotizarPage() {
       .then(setProductos);
   }, []);
 
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(res => {
-        if (res.ok) {
-          return res.json();
-        } else {
-          setIsLoggedIn(false);
-          throw new Error('No autenticado');
-        }
-      })
-      .then(data => {
-        setIsLoggedIn(true);
-        setUsuario(data);
-        setCliente({
-          nombre: data.nombre || '',
-          email: data.email || '',
-          telefono: data.telefono || '',
-          direccion: data.direccion || ''
-        });
-      })
-      .catch(() => {
-        setIsLoggedIn(false);
+  const prefillCliente = () => {
+    if (usuario && usuario.id !== clienteUserId) {
+      setClienteUserId(usuario.id);
+      setCliente({
+        nombre: usuario.nombre || '',
+        email: usuario.email || '',
+        telefono: usuario.telefono || '',
+        direccion: usuario.direccion || ''
       });
-  }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setProductoInicial(params.get('producto'));
-  }, []);
-
-  useEffect(() => {
-    if (productoInicial) {
-      setProductoActual(prev => ({ ...prev, producto_id: productoInicial }));
     }
-  }, [productoInicial]);
+  };
+  prefillCliente();
 
   const calcularPrecio = (producto: Producto, datos: { cantidad: number, medida_largo?: number, medida_ancho?: number }): number => {
     const precioBase = producto.precio_base;
@@ -203,14 +167,14 @@ export default function CotizarPage() {
     });
   };
 
-  const actualizarItem = (index: number, campo: string, valor: any) => {
+  const actualizarItem = (index: number, campo: string, valor: number | string | undefined) => {
     const nuevosItems = [...items];
     const item = nuevosItems[index];
     if (!item) return;
 
     if (campo === 'cantidad') {
       const producto = productos.find(p => p.id === item.producto_id);
-      const numero = parseInt(valor) || 1;
+      const numero = Number(valor) || 1;
       const max = producto?.stock ?? 1;
       if (numero > max) {
         showModal(`La cantidad máxima disponible es ${max}.`);
@@ -219,7 +183,7 @@ export default function CotizarPage() {
         item.cantidad = numero;
       }
     } else {
-      (item as any)[campo] = valor;
+      (item as unknown as Record<string, number | string | undefined>)[campo] = valor;
     }
 
     if (item.tipo === 'vidrio' || item.tipo === 'espejo') {
@@ -295,7 +259,7 @@ export default function CotizarPage() {
       } else {
         showModal(data.error || 'Error al crear cotización.');
       }
-    } catch (error) {
+    } catch {
       showModal('Error al conectar con el servidor. Intenta nuevamente.');
     } finally {
       setLoading(false);
@@ -304,7 +268,7 @@ export default function CotizarPage() {
 
   const totales = calcularTotales();
 
-  if (isLoggedIn === null) {
+  if (userLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#0d131f]">
         <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -313,7 +277,7 @@ export default function CotizarPage() {
     );
   }
 
-  if (!isLoggedIn) {
+  if (!usuario) {
     return (
       <div className="min-h-screen bg-[#0d131f] flex items-center justify-center p-4">
         <div className="max-w-md w-full p-8 rounded-2xl bg-[#161f30] border border-gray-800 shadow-2xl text-center">
@@ -634,5 +598,18 @@ export default function CotizarPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CotizarPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0d131f]">
+        <div className="w-10 h-10 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <div className="text-gray-300 font-medium">Cargando tu cotización...</div>
+      </div>
+    }>
+      <CotizarContent />
+    </Suspense>
   );
 }

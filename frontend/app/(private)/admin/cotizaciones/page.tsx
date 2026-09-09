@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { formatNumber } from '@/lib/format';
 
 interface Cotizacion {
   id: number;
@@ -15,13 +16,6 @@ interface Cotizacion {
   estado: string;
   codigo_unico: string;
 }
-
-const formatNumber = (value: number): string => {
-  return new Intl.NumberFormat('es-CO', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
 
 interface CotizacionDetalle {
   id: number;

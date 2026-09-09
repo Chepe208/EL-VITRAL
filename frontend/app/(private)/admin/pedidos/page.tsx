@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { formatNumber } from '@/lib/format';
 
 interface Pedido {
   id: number;
@@ -41,13 +42,6 @@ const colorPago: Record<Pedido['pago'], string> = {
   pendiente: 'bg-red-900/50 text-red-300',
   anticipo: 'bg-yellow-900/50 text-yellow-300',
   pagado: 'bg-green-900/50 text-green-300'
-};
-
-const formatNumber = (value: number): string => {
-  return new Intl.NumberFormat('es-CO', {
-    minimumFractionDigits:0,
-    maximumFractionDigits: 0,
-  }).format(value);
 };
 
 export default function AdminPedidosPage() {

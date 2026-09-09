@@ -14,8 +14,8 @@ export default async function SobreNosotros() {
                           src="https://img.freepik.com/fotos-premium/tecnico-que-corta-vidrios-tamano-artesanal-precision-instalacion-produccion-ventanas_964444-31536.jpg"
                           alt="Taller de vidrio"
                           fill
+                          sizes="100vw"
                           className="object-cover"
-                          unoptimized
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#161f30] via-[#0d131f]/60 to-black/40 flex items-center justify-center">
                            <h1 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-md">

@@ -2,7 +2,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import dynamic from 'next/dynamic';
+import type { CredentialResponse } from '@react-oauth/google';
+
+const GoogleAuthButton = dynamic(() => import('@/components/GoogleAuthButton'), {
+  ssr: false,
+});
 
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
@@ -117,7 +122,8 @@ export default function RegistroPage() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let { name, value } = e.target;
+    const { name } = e.target;
+    let value = e.target.value;
     
     if (name === 'email') {
       value = value.toLowerCase();
@@ -398,13 +404,10 @@ export default function RegistroPage() {
               <span className="text-xs text-gray-500">O continúa con</span>
 
               {googleClientId ? (
-                <GoogleOAuthProvider clientId={googleClientId}>
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={() => setErrors(prev => ({ ...prev, general: 'Error al autenticar con Google' }))}
-                    theme="filled_black"
-                  />
-                </GoogleOAuthProvider>
+                <GoogleAuthButton
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setErrors(prev => ({ ...prev, general: 'Error al autenticar con Google' }))}
+                />
               ) : (
                 <span className="text-xs text-amber-400">Configura Google Auth</span>
               )}
