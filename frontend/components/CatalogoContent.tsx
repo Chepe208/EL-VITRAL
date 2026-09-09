@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Image from 'next/image';
 import Link from "next/link";
 import { useSearchParams, useRouter } from 'next/navigation';
+import { formatNumber } from '@/lib/format';
 
 interface Producto {
     id: number;
@@ -12,13 +13,6 @@ interface Producto {
     imagen_url: string | null;
     unidad_medida: string;
     precio_base: number;
-}
-
-const formatPrice = (value: number): string => {
-    return new Intl.NumberFormat('es-CO', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-    }).format(value);
 }
 
 // Iconos para cada tipo (para mostrar en las tarjetas)
@@ -177,7 +171,7 @@ export default function CatalogoContent() {
                                 <div className="flex items-center justify-between mt-2">
                                     <div>
                                         <span className="text-2xl font-bold text-primary">
-                                            ${formatPrice((producto.tipo === 'vidrio' || producto.tipo === 'espejo') ? producto.precio_base * 1000 : producto.precio_base)}
+                                            ${formatNumber((producto.tipo === 'vidrio' || producto.tipo === 'espejo') ? producto.precio_base * 1000 : producto.precio_base)}
                                         </span>
                                         <span className="text-gray-500 text-sm ml-1">/ {producto.unidad_medida}</span>
                                     </div>
