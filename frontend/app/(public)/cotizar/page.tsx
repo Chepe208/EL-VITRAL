@@ -2,7 +2,12 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
-import { formatNumber } from '@/lib/format';
+import {
+  calcularPrecio,
+  requiereLargo,
+  requiereAncho,
+  formatNumberCOP as formatNumber,
+} from '@/lib/calculoPrecios';
 
 interface Producto {
   id: number;
@@ -76,24 +81,6 @@ function CotizarContent() {
     }
   };
   prefillCliente();
-
-  const calcularPrecio = (producto: Producto, datos: { cantidad: number, medida_largo?: number, medida_ancho?: number }): number => {
-    const precioBase = producto.precio_base;
-    if (producto.tipo === 'vidrio' || producto.tipo === 'espejo') {
-      if (!datos.medida_largo || !datos.medida_ancho) return 0;
-      const largoRedondeado = Math.ceil(datos.medida_largo / 10) * 10;
-      const anchoRedondeado = Math.ceil(datos.medida_ancho / 10) * 10;
-      return (largoRedondeado * anchoRedondeado * precioBase) / 10 * datos.cantidad;
-    }
-    if (producto.tipo === 'aluminio') {
-      const largo = datos.medida_largo || 0;
-      return precioBase * (largo / 100) * datos.cantidad;
-    }
-    return precioBase * datos.cantidad;
-  };
-
-  const requiereLargo = (tipo: string) => tipo === 'vidrio' || tipo === 'espejo' || tipo === 'aluminio';
-  const requiereAncho = (tipo: string) => tipo === 'vidrio' || tipo === 'espejo';
 
   const cantidadMaxima = (): number => {
     const producto = productos.find(p => p.id === parseInt(productoActual.producto_id));
