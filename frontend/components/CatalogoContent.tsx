@@ -26,7 +26,7 @@ const tipoIcono = {
     vidrio: '🪟',
     espejo: '🪞',
     aluminio: '🔩',
-    accesorio: '🔧',
+    herraje: '🔧',
 };
 
 export default function CatalogoContent() {
@@ -101,7 +101,7 @@ export default function CatalogoContent() {
 
                 {/* Filtros mejorados */}
                 <div className="flex flex-wrap gap-2 mb-8 pb-4 border-b border-white/5">
-                    {['todos', 'vidrio', 'accesorio', 'espejo', 'aluminio'].map((tipo) => {
+                    {['todos', 'vidrio', 'herraje', 'espejo', 'aluminio'].map((tipo) => {
                         // Solo mostrar tipos que tengan al menos un producto, excepto 'todos'
                         if (tipo !== 'todos' && contarPorTipo(tipo) === 0) return null;
                         const label = tipo === 'todos' ? 'Todos' : tipo.charAt(0).toUpperCase() + tipo.slice(1);
@@ -177,7 +177,7 @@ export default function CatalogoContent() {
                                 <div className="flex items-center justify-between mt-2">
                                     <div>
                                         <span className="text-2xl font-bold text-primary">
-                                            ${formatPrice(producto.precio_base)}
+                                            ${formatPrice((producto.tipo === 'vidrio' || producto.tipo === 'espejo') ? producto.precio_base * 1000 : producto.precio_base)}
                                         </span>
                                         <span className="text-gray-500 text-sm ml-1">/ {producto.unidad_medida}</span>
                                     </div>
