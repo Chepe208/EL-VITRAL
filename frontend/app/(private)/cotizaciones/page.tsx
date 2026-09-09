@@ -249,6 +249,7 @@ export default function CotizacionesPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-800">
+                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                       {selectedCotizacion.detalles?.map((det: any, i: number) => (
                         <tr key={i} className="hover:bg-gray-800/30">
                           <td className="p-3 text-white font-medium">{det.descripcion}</td>

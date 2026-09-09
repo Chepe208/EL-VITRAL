@@ -28,6 +28,7 @@ const {
   generateRefreshToken,
   getUserFromRequest,
   isAdmin,
+  requireAuth,
   requireAdmin,
   verifyAccessToken,
   verifyRefreshToken,
@@ -1440,7 +1441,8 @@ async function handleRequest(req, res) {
     const adminPath = pathname.startsWith('/api/admin');
     const parts = extractRouteParts(pathname);
 
-    if (adminPath && parts.length >= 2) {
+    // Control de autorización estricto en backend: Cualquier ruta /api/admin exige token válido y rol admin
+    if (adminPath) {
       const adminCheck = requireAdmin(req);
       if (!adminCheck.ok) {
         return sendJSON(res, adminCheck.status, { error: adminCheck.error });
@@ -1487,11 +1489,15 @@ async function handleRequest(req, res) {
 
     // ===== ADMIN PRODUCTOS =====
     if (pathname === '/api/admin/productos' && method === 'GET') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const productos = await getProductList(false);
       return sendJSON(res, 200, productos);
     }
 
     if (pathname === '/api/admin/productos' && method === 'POST') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const body = await parseBody(req);
       const nombre = sanitizeString(body.nombre || '');
       const descripcion = sanitizeString(body.descripcion || '');
@@ -1515,6 +1521,8 @@ async function handleRequest(req, res) {
     }
 
     if (parts[0] === 'api' && parts[1] === 'admin' && parts[2] === 'productos' && parts[3] && (method === 'PATCH' || method === 'DELETE')) {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const id = Number(parts[3]);
       if (Number.isNaN(id)) {
         return sendJSON(res, 400, { error: 'ID de producto inválido' });
@@ -1559,6 +1567,8 @@ async function handleRequest(req, res) {
 
     // ===== ADMIN PROYECTOS DESTACADOS =====
     if (pathname === '/api/admin/proyectos' && method === 'GET') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const proyectos = await query(`
         SELECT id, titulo, slug, resumen, descripcion, imagen_url, tecnologias, orden, activo, fecha_creacion, fecha_actualizacion
         FROM proyectos_destacados
@@ -1658,6 +1668,8 @@ async function handleRequest(req, res) {
 
     // ===== ADMIN COTIZACIONES =====
     if (pathname === '/api/admin/cotizaciones' && method === 'GET') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const cotizaciones = await query(`
         SELECT
           c.id,
@@ -1677,6 +1689,8 @@ async function handleRequest(req, res) {
     }
 
     if (parts[0] === 'api' && parts[1] === 'admin' && parts[2] === 'cotizaciones' && parts[3] && parts[4] === 'pdf' && method === 'GET') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const id = Number(parts[3]);
       if (Number.isNaN(id)) {
         return sendJSON(res, 400, { error: 'ID inválido' });
@@ -1696,6 +1710,8 @@ async function handleRequest(req, res) {
 
     // ===== ADMIN PEDIDOS =====
     if (pathname === '/api/admin/pedidos' && method === 'GET') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const pedidos = await query(`
         SELECT
           p.*,
@@ -1711,6 +1727,8 @@ async function handleRequest(req, res) {
     }
 
     if (parts[0] === 'api' && parts[1] === 'admin' && parts[2] === 'pedidos' && parts[3] && method === 'PATCH') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const id = Number(parts[3]);
       if (Number.isNaN(id)) {
         return sendJSON(res, 400, { error: 'ID de pedido inválido' });
@@ -1771,6 +1789,8 @@ async function handleRequest(req, res) {
     }
 
     if (parts[0] === 'api' && parts[1] === 'admin' && parts[2] === 'pedidos' && parts[3] && parts[4] === 'pdf' && method === 'GET') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const id = Number(parts[3]);
       if (Number.isNaN(id)) {
         return sendJSON(res, 400, { error: 'ID inválido' });
@@ -1794,6 +1814,8 @@ async function handleRequest(req, res) {
 
     // ===== ADMIN INVENTARIO =====
     if (pathname === '/api/admin/inventario' && method === 'GET') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const movimientos = await query(`
         SELECT i.*, p.nombre AS producto_nombre, u.nombre AS usuario_nombre
         FROM inventario i
@@ -1805,6 +1827,8 @@ async function handleRequest(req, res) {
     }
 
     if (pathname === '/api/admin/inventario' && method === 'POST') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const body = await parseBody(req);
       const producto_id = Number(body.producto_id);
       const cantidad = Number(body.cantidad);
@@ -1833,11 +1857,15 @@ async function handleRequest(req, res) {
 
     // ===== ADMIN USUARIOS =====
     if (pathname === '/api/admin/usuarios' && method === 'GET') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const usuarios = await query('SELECT id, nombre, email, telefono, direccion, rol, aprobado, ultimo_acceso FROM usuarios ORDER BY fecha_registro DESC');
       return sendJSON(res, 200, Array.isArray(usuarios) ? usuarios.map(formatNumericRow) : []);
     }
 
     if (pathname === '/api/admin/usuarios' && method === 'PATCH') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const body = await parseBody(req);
       const id = Number(body.id);
       if (Number.isNaN(id)) {
@@ -2554,6 +2582,8 @@ async function handleRequest(req, res) {
 
     // ===== ADMIN AGENDA =====
     if (pathname === '/api/admin/agenda' && method === 'GET') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       try {
         const rows = await query(
           'SELECT id, usuario_id, titulo, descripcion, fecha_cita, tipo, estado, notas, fecha_creacion FROM citas_agenda ORDER BY fecha_cita DESC'

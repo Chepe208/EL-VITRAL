@@ -45,6 +45,7 @@ export default function CotizarPage() {
   const [productoInicial, setProductoInicial] = useState<string | null>(null);
 
   const [productos, setProductos] = useState<Producto[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [usuario, setUsuario] = useState<Usuario | null>(null);
   const [cliente, setCliente] = useState({
     nombre: '',
@@ -104,11 +105,13 @@ export default function CotizarPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setProductoInicial(params.get('producto'));
   }, []);
 
   useEffect(() => {
     if (productoInicial) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProductoActual(prev => ({ ...prev, producto_id: productoInicial }));
     }
   }, [productoInicial]);
@@ -203,6 +206,7 @@ export default function CotizarPage() {
     });
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const actualizarItem = (index: number, campo: string, valor: any) => {
     const nuevosItems = [...items];
     const item = nuevosItems[index];
@@ -219,6 +223,7 @@ export default function CotizarPage() {
         item.cantidad = numero;
       }
     } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (item as any)[campo] = valor;
     }
 
@@ -295,7 +300,7 @@ export default function CotizarPage() {
       } else {
         showModal(data.error || 'Error al crear cotización.');
       }
-    } catch (error) {
+    } catch {
       showModal('Error al conectar con el servidor. Intenta nuevamente.');
     } finally {
       setLoading(false);

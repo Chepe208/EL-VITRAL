@@ -42,6 +42,7 @@ export default function AdminProyectosPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
   useEffect(() => { fetchProjects(); }, []);
 
   const openNewProject = () => {
@@ -121,7 +122,7 @@ export default function AdminProyectosPage() {
               <tbody className="divide-y divide-gray-700">
                 {proyectos.map((project) => (
                   <tr key={project.id} className="hover:bg-gray-800/40">
-                    <td className="px-5 py-4"><div className="flex items-center gap-3"><img src={project.imagen_url} alt="" className="h-12 w-16 rounded object-cover" /><div><p className="font-medium text-white">{project.titulo}</p><p className="text-xs text-gray-400">/{project.slug}</p></div></div></td>
+                    <td className="px-5 py-4"><div className="flex items-center gap-3">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={project.imagen_url} alt="" className="h-12 w-16 rounded object-cover" /><div><p className="font-medium text-white">{project.titulo}</p><p className="text-xs text-gray-400">/{project.slug}</p></div></div></td>
                     <td className="max-w-sm px-5 py-4 text-sm text-gray-300">{project.resumen}</td>
                     <td className="px-5 py-4 text-white">{project.orden}</td>
                     <td className="px-5 py-4"><span className={Boolean(project.activo) ? 'text-green-400' : 'text-gray-400'}>{Boolean(project.activo) ? 'Visible' : 'Oculto'}</span></td>

@@ -117,7 +117,8 @@ export default function RegistroPage() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let { name, value } = e.target;
+    const { name } = e.target;
+    let { value } = e.target;
     
     if (name === 'email') {
       value = value.toLowerCase();

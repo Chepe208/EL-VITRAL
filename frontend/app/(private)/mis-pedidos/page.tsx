@@ -1,6 +1,5 @@
 'use client';
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 
 interface PedidoDetalle {
   id: number;
@@ -40,6 +39,7 @@ export default function MisPedidosPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [showSurveyModal, setShowSurveyModal] = useState(false);
   const [surveyPedido, setSurveyPedido] = useState<Pedido | null>(null);
