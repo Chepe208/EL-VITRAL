@@ -1,17 +1,12 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { memo, useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
 
-interface User {
-  id: number;
-  nombre: string;
-  email: string;
-  rol: string;
-}
-
-export default function Navbar() {
-  const [user, setUser] = useState<User | null>(null);
+function Navbar() {
+  const { user, clearUser } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -23,21 +18,6 @@ export default function Navbar() {
 
   const pathname = usePathname();
   const router = useRouter();
-
-  // Obtener usuario
-  useEffect(() => {
-    const fetchUser = async () => {
-      const res = await fetch('/api/auth/me', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data);
-        console.log('Usuario obtenido:', data); // Para depurar
-      } else {
-        setUser(null);
-      }
-    };
-    fetchUser();
-  }, []);
 
   // Cerrar menús al hacer clic fuera
   useEffect(() => {
@@ -99,18 +79,17 @@ export default function Navbar() {
     };
   }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-    setUser(null);
+    clearUser();
     setMessage('Salida exitosa');
     setDesktopMenuOpen(false);
     setMobileMenuOpen(false);
     setTimeout(() => {
       setMessage('');
       window.location.href = '/';
-      router.push('/');
     }, 1400);
-  };
+  }, [clearUser]);
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
   const closeDesktopMenu = () => setDesktopMenuOpen(false);
@@ -122,8 +101,7 @@ export default function Navbar() {
           {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <Link href="/" onClick={closeMobileMenu}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.jpeg" alt="Logo El Vitral" className="h-12 w-auto" />
+              <Image src="/logo.jpeg" alt="Logo El Vitral" width={172} height={48} className="h-12 w-auto" />
             </Link>
           </div>
 
@@ -388,3 +366,5 @@ export default function Navbar() {
     </nav>
   );
 }
+
+export default memo(Navbar);

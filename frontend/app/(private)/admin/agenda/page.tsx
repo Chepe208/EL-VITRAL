@@ -49,24 +49,17 @@ export default function AgendaAdminPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('🔍 Iniciando fetch de /api/admin/agenda...');
         const citasRes = await fetch('/api/admin/agenda', { credentials: 'include' });
-        console.log('📍 Response status:', citasRes.status);
-        console.log('📍 Response headers:', citasRes.headers);
         
         const usuariosRes = await fetch('/api/admin/usuarios', { credentials: 'include' });
 
         if (!citasRes.ok) {
           const citasError = await citasRes.json().catch(() => ({}));
-          console.error('Error en /api/admin/agenda:', citasRes.status, citasError);
-          console.log('Full response:', await citasRes.text().catch(() => 'Could not read text'));
           setError(`Error al cargar citas: ${citasRes.status} - ${JSON.stringify(citasError)}`);
           return;
         }
 
         if (!usuariosRes.ok) {
-          const usuariosError = await usuariosRes.json().catch(() => ({}));
-          console.error('Error en /api/admin/usuarios:', usuariosRes.status, usuariosError);
           setError(`Error al cargar usuarios: ${usuariosRes.status}`);
           return;
         }

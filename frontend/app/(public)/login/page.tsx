@@ -1,8 +1,18 @@
 'use client';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import ReCAPTCHA from 'react-google-recaptcha';
-import { GoogleOAuthProvider, GoogleLogin, CredentialResponse } from '@react-oauth/google';
+import dynamic from 'next/dynamic';
+import type ReCAPTCHAComponent from 'react-google-recaptcha';
+import type { CredentialResponse } from '@react-oauth/google';
+
+const ReCAPTCHA = dynamic(() => import('@/components/CaptchaWidget'), {
+  ssr: false,
+  loading: () => <div className="h-16 w-full flex items-center justify-center text-xs text-gray-500">Cargando verificación...</div>,
+});
+
+const GoogleAuthButton = dynamic(() => import('@/components/GoogleAuthButton'), {
+  ssr: false,
+});
 
 const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '';
 const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
@@ -28,7 +38,7 @@ export default function LoginPage() {
 
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const recaptchaRef = useRef<ReCAPTCHA>(null);
+  const recaptchaRef = useRef<ReCAPTCHAComponent>(null);
 
   const resetRecaptcha = () => {
     recaptchaRef.current?.reset();
@@ -306,13 +316,10 @@ export default function LoginPage() {
               <span className="text-xs text-gray-500">O continúa con</span>
 
               {googleClientId ? (
-                <GoogleOAuthProvider clientId={googleClientId}>
-                  <GoogleLogin
-                    onSuccess={handleGoogleSuccess}
-                    onError={() => setError('Error al autenticar con Google')}
-                    theme="filled_black"
-                  />
-                </GoogleOAuthProvider>
+                <GoogleAuthButton
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setError('Error al autenticar con Google')}
+                />
               ) : (
                 <span className="text-xs text-amber-400">Configura Google Auth</span>
               )}

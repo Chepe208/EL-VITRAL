@@ -71,7 +71,7 @@ export default function ProyectoDetalle() {
 
             <h1 className="mb-5 text-2xl font-bold text-white sm:mb-6 sm:text-3xl md:text-4xl">{proyecto.titulo}</h1>
             <div className="relative mb-6 h-56 overflow-hidden rounded-xl shadow-lg sm:mb-8 sm:h-80 md:h-[500px]">
-              <Image src={proyecto.imagen_url} alt={proyecto.titulo} fill className="object-cover" unoptimized />
+              <Image src={proyecto.imagen_url} alt={proyecto.titulo} fill sizes="(max-width: 768px) 100vw, 800px" className="object-cover" />
             </div>
             <div className="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-3">
               <div className="lg:col-span-2">

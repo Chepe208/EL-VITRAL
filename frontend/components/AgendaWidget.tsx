@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { memo, useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/components/AuthProvider';
 
 interface Cita {
   id: number;
@@ -23,13 +24,13 @@ const tiposIconos: Record<string, string> = {
   otro: '📅',
 };
 
-export default function AgendaWidget() {
+function AgendaWidget() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [citas, setCitas] = useState<Cita[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<{ id: number; nombre: string } | null>(null);
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     titulo: '',
     descripcion: '',
@@ -50,34 +51,29 @@ export default function AgendaWidget() {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
-  const fetchCitas = async () => {
-    try {
-      const res = await fetch('/api/agenda/citas', { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setCitas(data.sort((a: Cita, b: Cita) => new Date(a.fecha_cita).getTime() - new Date(b.fecha_cita).getTime()));
-      }
-    } catch (error) {
-      console.error('Error obteniendo citas:', error);
+  const fetchCitas = useCallback(async () => {
+    const res = await fetch('/api/agenda/citas', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      setCitas(data.sort((a: Cita, b: Cita) => new Date(a.fecha_cita).getTime() - new Date(b.fecha_cita).getTime()));
     }
-  };
+  }, []);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        if (res.ok) {
-          const userData = await res.json();
-          setUser(userData);
-          fetchCitas();
+    if (!user) return;
+    let cancelled = false;
+    fetch('/api/agenda/citas', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data) {
+          setCitas(data.sort((a: Cita, b: Cita) => new Date(a.fecha_cita).getTime() - new Date(b.fecha_cita).getTime()));
         }
-      } catch (error) {
-        console.error('Error obteniendo usuario:', error);
-      }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
     };
-
-    fetchUser();
-  }, []);
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -330,3 +326,5 @@ export default function AgendaWidget() {
     </div>
   );
 }
+
+export default memo(AgendaWidget);

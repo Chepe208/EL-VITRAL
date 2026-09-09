@@ -78,7 +78,6 @@ const ReviewsCarousel: React.FC = () => {
                           width={56}
                           height={56}
                           className="object-cover"
-                          unoptimized
                         />
                       </div>
                       <div>

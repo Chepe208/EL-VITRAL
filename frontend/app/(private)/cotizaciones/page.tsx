@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { formatNumber } from '@/lib/format';
 
 interface Cotizacion {
   id: number;
@@ -20,13 +21,6 @@ interface Cotizacion {
     subtotal: number;
   }>;
 }
-
-const formatNumber = (value: number): string => {
-  return new Intl.NumberFormat('es-CO', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
 
 export default function CotizacionesPage() {
   const [cotizaciones, setCotizaciones] = useState<Cotizacion[]>([]);
@@ -249,8 +243,7 @@ export default function CotizacionesPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-800">
-                      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                      {selectedCotizacion.detalles?.map((det: any, i: number) => (
+                      {selectedCotizacion.detalles?.map((det, i: number) => (
                         <tr key={i} className="hover:bg-gray-800/30">
                           <td className="p-3 text-white font-medium">{det.descripcion}</td>
                           <td className="p-3 text-gray-400">

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { formatNumber } from '@/lib/format';
 
 interface PedidoDetalle {
   id: number;
@@ -27,20 +28,11 @@ interface Pedido {
   encuesta_id?: number | null;
 }
 
-const formatNumber = (value: number): string => {
-  return new Intl.NumberFormat('es-CO', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
-
 export default function MisPedidosPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [selectedPedido, setSelectedPedido] = useState<Pedido | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [loadingDetails, setLoadingDetails] = useState(false);
   const [showSurveyModal, setShowSurveyModal] = useState(false);
   const [surveyPedido, setSurveyPedido] = useState<Pedido | null>(null);
   const [rating, setRating] = useState(5);
@@ -121,7 +113,6 @@ export default function MisPedidosPage() {
   }, []);
 
   const verDetallesPedido = async (pedidoId: number) => {
-    setLoadingDetails(true);
     try {
       const res = await fetch(`/api/pedidos/${pedidoId}`, { credentials: 'include' });
       if (!res.ok) {
@@ -135,8 +126,6 @@ export default function MisPedidosPage() {
     } catch (error) {
       console.error('Error al cargar detalle del pedido:', error);
       alert('Error al cargar el detalle del pedido');
-    } finally {
-      setLoadingDetails(false);
     }
   };
 
