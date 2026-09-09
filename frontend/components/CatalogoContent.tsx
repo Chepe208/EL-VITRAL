@@ -177,7 +177,7 @@ export default function CatalogoContent() {
                                 <div className="flex items-center justify-between mt-2">
                                     <div>
                                         <span className="text-2xl font-bold text-primary">
-                                            ${formatPrice(producto.precio_base)}
+                                            ${formatPrice((producto.tipo === 'vidrio' || producto.tipo === 'espejo') ? producto.precio_base * 1000 : producto.precio_base)}
                                         </span>
                                         <span className="text-gray-500 text-sm ml-1">/ {producto.unidad_medida}</span>
                                     </div>
