@@ -8,6 +8,7 @@ const PUBLIC_PATHS = [
   '/',
   '/catalogo',
   '/cotizar',
+  '/proyectos',
   '/sobre-nosotros',
   '/login',
   '/registro',
