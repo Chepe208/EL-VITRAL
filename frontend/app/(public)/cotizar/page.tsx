@@ -1,7 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-  
+import {
+  calcularPrecio,
+  requiereLargo,
+  requiereAncho,
+  formatNumberCOP as formatNumber,
+} from '@/lib/calculoPrecios';
+
 interface Producto {
   id: number;
   nombre: string;
@@ -32,13 +38,6 @@ interface Usuario {
 }
 
 const MINIMUM_QUOTE_TOTAL_COP = 10000;
-
-const formatNumber = (value: number): string => {
-  return new Intl.NumberFormat('es-CO', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-};
 
 export default function CotizarPage() {
   const router = useRouter();
@@ -115,24 +114,6 @@ export default function CotizarPage() {
       setProductoActual(prev => ({ ...prev, producto_id: productoInicial }));
     }
   }, [productoInicial]);
-
-  const calcularPrecio = (producto: Producto, datos: { cantidad: number, medida_largo?: number, medida_ancho?: number }): number => {
-    const precioBase = producto.precio_base;
-    if (producto.tipo === 'vidrio' || producto.tipo === 'espejo') {
-      if (!datos.medida_largo || !datos.medida_ancho) return 0;
-      const largoRedondeado = Math.ceil(datos.medida_largo / 10) * 10;
-      const anchoRedondeado = Math.ceil(datos.medida_ancho / 10) * 10;
-      return (largoRedondeado * anchoRedondeado * precioBase) / 10 * datos.cantidad;
-    }
-    if (producto.tipo === 'aluminio') {
-      const largo = datos.medida_largo || 0;
-      return precioBase * (largo / 100) * datos.cantidad;
-    }
-    return precioBase * datos.cantidad;
-  };
-
-  const requiereLargo = (tipo: string) => tipo === 'vidrio' || tipo === 'espejo' || tipo === 'aluminio';
-  const requiereAncho = (tipo: string) => tipo === 'vidrio' || tipo === 'espejo';
 
   const cantidadMaxima = (): number => {
     const producto = productos.find(p => p.id === parseInt(productoActual.producto_id));

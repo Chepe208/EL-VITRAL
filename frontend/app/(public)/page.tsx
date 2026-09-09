@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import ReviewsCarousel from '@/components/ReviewsCarousel';
+import CalculadoraPrecios from '@/components/CalculadoraPrecios';
 import LocationSection from '@/components/LocationSection';
 import FeaturedProjectsCarousel from '@/components/FeaturedProjectsCarousel';
 import { useRouter } from 'next/navigation';
@@ -110,6 +111,7 @@ export default function LandingPage() {
 
       {/* Reseñas y Ubicación */}
       <ReviewsCarousel />
+      <CalculadoraPrecios />
       <LocationSection />
     </div>
   );
