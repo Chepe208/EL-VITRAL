@@ -14,6 +14,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'El Vitral',
   description: 'Descubre nuestras instalaciones de vidrio',
+  icons: {
+    icon: '/logo2.png',
+  },
 }
 
 export default function RootLayout({

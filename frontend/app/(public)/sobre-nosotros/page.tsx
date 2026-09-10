@@ -63,7 +63,7 @@ export default async function SobreNosotros() {
                                 </li>
                                 <li className="flex items-start gap-2 bg-gray-900/50 p-3 rounded-xl border border-gray-800">
                                     <span className="text-cyan-400 font-bold">✓</span>
-                                    <span>Instalación profesional con garantía.</span>
+                                    <span>Instalación con garantía.</span>
                                 </li>
                                 <li className="flex items-start gap-2 bg-gray-900/50 p-3 rounded-xl border border-gray-800">
                                     <span className="text-cyan-400 font-bold">✓</span>
@@ -76,14 +76,7 @@ export default async function SobreNosotros() {
                             </ul>
                         </div>
 
-                        <div className="border-t border-gray-800/80 pt-6">
-                            <h3 className="text-xl font-bold text-white mb-3 flex items-center gap-2">
-                                <span className="text-cyan-400">👥</span> Nuestro Equipo
-                            </h3>
-                            <p className="text-gray-300 leading-relaxed text-sm md:text-base">
-                                Contamos con un equipo de artesanos, diseñadores y técnicos especializados que trabajan en conjunto para convertir tus ideas en realidad. Cada proyecto es único, y lo tratamos como tal.
-                            </p>
-                        </div>
+                        
 
                         {/* Call to Action */}
                         <div className="bg-gradient-to-r from-cyan-950/40 via-gray-900 to-gray-900 border border-cyan-500/30 p-6 sm:p-8 rounded-2xl text-center mt-8 shadow-xl"> 
