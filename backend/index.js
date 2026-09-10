@@ -1938,6 +1938,32 @@ async function handleRequest(req, res) {
         return sendJSON(res, 400, { error: 'Algunos productos son inválidos' });
       }
 
+      const MEDIDA_MAXIMA_CM = 250;
+      const esCelularColombia = (phone) => {
+        const digitos = String(phone || '').replace(/\D/g, '');
+        return digitos.length === 10 ? /^3\d{9}$/.test(digitos) : /^573\d{9}$/.test(digitos);
+      };
+      if (!esCelularColombia(cliente.telefono)) {
+        return sendJSON(res, 400, { error: 'Ingresa un número de celular válido (por ejemplo, 3001234567)' });
+      }
+
+      for (const { item, product } of quoteItems) {
+        const cantidad = Number(item.cantidad);
+        if (!Number.isFinite(cantidad) || cantidad < 1) {
+          return sendJSON(res, 400, { error: 'Todos los productos deben tener una cantidad mayor a 0' });
+        }
+        const requiereLargo = ['vidrio', 'espejo', 'aluminio'].includes(product.tipo);
+        const requiereAncho = ['vidrio', 'espejo'].includes(product.tipo);
+        const largo = Number(item.medida_largo || NaN);
+        const ancho = Number(item.medida_ancho || NaN);
+        if (requiereLargo && (!Number.isFinite(largo) || largo <= 0 || largo > MEDIDA_MAXIMA_CM)) {
+          return sendJSON(res, 400, { error: 'Las medidas deben ser mayores a 0 y no exceder los 250 cm por lado' });
+        }
+        if (requiereAncho && (!Number.isFinite(ancho) || ancho <= 0 || ancho > MEDIDA_MAXIMA_CM)) {
+          return sendJSON(res, 400, { error: 'Las medidas deben ser mayores a 0 y no exceder los 250 cm por lado' });
+        }
+      }
+
       let subtotal = 0;
       const detalleValues = [];
       quoteItems.forEach(({ item, product }) => {

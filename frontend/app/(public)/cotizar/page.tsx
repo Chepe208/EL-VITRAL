@@ -31,6 +31,12 @@ interface ItemCotizacion {
 }
 
 const MINIMUM_QUOTE_TOTAL_COP = 10000;
+const MEDIDA_MAXIMA_CM = 250;
+
+const esCelularColombia = (telefono: string): boolean => {
+  const digitos = telefono.replace(/\D/g, '');
+  return digitos.length === 10 ? /^3\d{9}$/.test(digitos) : /^573\d{9}$/.test(digitos);
+};
 
 function CotizarContent() {
   const router = useRouter();
@@ -45,7 +51,13 @@ function CotizarContent() {
     direccion: ''
   });
   const [items, setItems] = useState<ItemCotizacion[]>([]);
-  const [productoActual, setProductoActual] = useState({
+  const [productoActual, setProductoActual] = useState<{
+    producto_id: string;
+    cantidad: number | '';
+    medida_largo: string;
+    medida_ancho: string;
+    grosor: string;
+  }>({
     producto_id: productoInicial || '',
     cantidad: 1,
     medida_largo: '',
@@ -88,7 +100,15 @@ function CotizarContent() {
   };
 
   const cambiarCantidad = (valor: string) => {
-    const numero = parseInt(valor) || 1;
+    if (valor === '') {
+      setProductoActual({ ...productoActual, cantidad: '' });
+      return;
+    }
+    const numero = parseInt(valor, 10);
+    if (Number.isNaN(numero) || numero <= 0) {
+      setProductoActual({ ...productoActual, cantidad: '' });
+      return;
+    }
     const max = cantidadMaxima();
     if (numero > max) {
       showModal(`La cantidad máxima disponible es ${max}.`);
@@ -96,6 +116,31 @@ function CotizarContent() {
     } else {
       setProductoActual({ ...productoActual, cantidad: numero });
     }
+  };
+
+  const validarMedida = (valor: string, campo: 'medida_largo' | 'medida_ancho'): boolean => {
+    if (valor === '') return false;
+    const numero = Number(valor);
+    if (Number.isNaN(numero) || numero <= 0) return false;
+    if (numero > MEDIDA_MAXIMA_CM) {
+      showModal(`La medida ${campo === 'medida_largo' ? 'de largo' : 'de ancho'} no puede exceder los ${MEDIDA_MAXIMA_CM} cm.`);
+      return false;
+    }
+    return true;
+  };
+
+  const validaMedidasProducto = (tipo: string, largo: string, ancho: string): boolean => {
+    const requiereL = requiereLargo(tipo);
+    const requiereA = requiereAncho(tipo);
+    if (requiereL && !validarMedida(largo, 'medida_largo')) {
+      showModal('Para este producto debe ingresar un largo válido (mayor a 0 y hasta 250 cm).');
+      return false;
+    }
+    if (requiereA && !validarMedida(ancho, 'medida_ancho')) {
+      showModal('Para este producto debe ingresar un ancho válido (mayor a 0 y hasta 250 cm).');
+      return false;
+    }
+    return true;
   };
 
   const agregarItem = () => {
@@ -106,24 +151,23 @@ function CotizarContent() {
     const producto = productos.find(p => p.id === parseInt(productoActual.producto_id));
     if (!producto) return;
 
-    if ((producto.tipo === 'vidrio' || producto.tipo === 'espejo') &&
-        (!productoActual.medida_largo || !productoActual.medida_ancho)) {
-      showModal('Para vidrios y espejos debe ingresar largo y ancho.');
+    const cantidad = productoActual.cantidad;
+    if (cantidad === '' || Number.isNaN(Number(cantidad)) || Number(cantidad) < 1) {
+      showModal('Ingresa una cantidad válida (mayor a 0).');
       return;
     }
 
-    if (producto.tipo === 'aluminio' && !productoActual.medida_largo) {
-      showModal('Para aluminio debe ingresar el largo.');
+    if (!validaMedidasProducto(producto.tipo, productoActual.medida_largo, productoActual.medida_ancho)) {
       return;
     }
 
-    if (productoActual.cantidad > producto.stock) {
+    if (cantidad > producto.stock) {
       showModal(`La cantidad máxima disponible es ${producto.stock}.`);
       return;
     }
 
     const precio = calcularPrecio(producto, {
-      cantidad: productoActual.cantidad,
+      cantidad,
       medida_largo: parseFloat(productoActual.medida_largo) || undefined,
       medida_ancho: parseFloat(productoActual.medida_ancho) || undefined
     });
@@ -139,7 +183,7 @@ function CotizarContent() {
       producto_id: producto.id,
       nombre: producto.nombre,
       tipo: producto.tipo,
-      cantidad: productoActual.cantidad,
+      cantidad,
       medida_largo: medidaLargo,
       medida_ancho: medidaAncho,
       precio
@@ -169,22 +213,23 @@ function CotizarContent() {
       } else {
         item.cantidad = numero;
       }
+    } else if (campo === 'medida_largo' || campo === 'medida_ancho') {
+      const numeroMedida = Number(valor);
+      if (!Number.isNaN(numeroMedida) && numeroMedida > MEDIDA_MAXIMA_CM) {
+        showModal(`La medida no puede exceder los ${MEDIDA_MAXIMA_CM} cm.`);
+        return;
+      }
+      (item as unknown as Record<string, number | string | undefined>)[campo] = Number.isNaN(numeroMedida) ? undefined : numeroMedida;
+      if ((item.tipo === 'vidrio' || item.tipo === 'espejo') && numeroMedida > 0) {
+        item[campo] = Math.ceil(numeroMedida / 10) * 10;
+      }
     } else {
       (item as unknown as Record<string, number | string | undefined>)[campo] = valor;
     }
 
-    if (item.tipo === 'vidrio' || item.tipo === 'espejo') {
-      if (campo === 'medida_largo' && item.medida_largo) {
-        item.medida_largo = Math.ceil(Number(item.medida_largo) / 10) * 10;
-      }
-      if (campo === 'medida_ancho' && item.medida_ancho) {
-        item.medida_ancho = Math.ceil(Number(item.medida_ancho) / 10) * 10;
-      }
-    }
-
     if (campo === 'cantidad' || campo === 'medida_largo' || campo === 'medida_ancho') {
-      const producto = productos.find(p => p.id === item.producto_id);
-      if (producto) {
+    const producto = productos.find(p => p.id === item.producto_id);
+    if (producto) {
         const nuevoPrecio = calcularPrecio(producto, {
           cantidad: item.cantidad,
           medida_largo: item.medida_largo,
@@ -215,6 +260,25 @@ function CotizarContent() {
 
     if (items.length === 0) {
       showModal('Debe agregar al menos un producto a la cotización.');
+      return;
+    }
+
+    if (cliente.telefono && !esCelularColombia(cliente.telefono)) {
+      showModal('Ingresa un número de celular válido (por ejemplo, 3001234567 o 57 3001234567).');
+      return;
+    }
+
+    const itemInvalido = items.find(item => {
+      if (item.cantidad < 1) return true;
+      const requiere = requiereLargo(item.tipo) || requiereAncho(item.tipo);
+      if (!requiere) return false;
+      if (requiereLargo(item.tipo) && (!item.medida_largo || item.medida_largo <= 0)) return true;
+      if (requiereAncho(item.tipo) && (!item.medida_ancho || item.medida_ancho <= 0)) return true;
+      return item.medida_largo && item.medida_largo > MEDIDA_MAXIMA_CM
+        || item.medida_ancho && item.medida_ancho > MEDIDA_MAXIMA_CM;
+    });
+    if (itemInvalido) {
+      showModal(`El producto "${itemInvalido.nombre}" tiene medidas o cantidades inválidas. Revisa que las medidas estén entre 1 y ${MEDIDA_MAXIMA_CM} cm.`);
       return;
     }
 
