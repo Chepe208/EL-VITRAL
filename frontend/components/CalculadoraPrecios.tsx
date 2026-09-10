@@ -10,6 +10,8 @@ import {
   formatPriceCOP,
 } from '@/lib/calculoPrecios';
 
+const MEDIDA_MAXIMA_CM = 250;
+
 interface ItemCalculoPublico {
   uid: string;
   producto_id: number;
@@ -32,7 +34,7 @@ export default function CalculadoraPrecios() {
 
   // Formulario para nuevo producto
   const [productoSeleccionadoId, setProductoSeleccionadoId] = useState<string>('');
-  const [cantidad, setCantidad] = useState<number>(1);
+  const [cantidad, setCantidad] = useState<number | ''>(1);
   const [medidaLargo, setMedidaLargo] = useState<string>('');
   const [medidaAncho, setMedidaAncho] = useState<string>('');
   const [mensajeValidacion, setMensajeValidacion] = useState<string | null>(null);
@@ -122,8 +124,18 @@ export default function CalculadoraPrecios() {
       return;
     }
 
+    if (pideLargo && numLargo && numLargo > MEDIDA_MAXIMA_CM) {
+      setMensajeValidacion(`La medida de largo no puede exceder los ${MEDIDA_MAXIMA_CM} cm.`);
+      return;
+    }
+
     if (pideAncho && (!numAncho || numAncho <= 0 || isNaN(numAncho))) {
       setMensajeValidacion('Ingresa una medida de ancho válida en centímetros (mayor a 0).');
+      return;
+    }
+
+    if (pideAncho && numAncho && numAncho > MEDIDA_MAXIMA_CM) {
+      setMensajeValidacion(`La medida de ancho no puede exceder los ${MEDIDA_MAXIMA_CM} cm.`);
       return;
     }
 
@@ -317,7 +329,13 @@ export default function CalculadoraPrecios() {
                           step="1"
                           value={cantidad}
                           onChange={(e) => {
-                            setCantidad(Math.max(1, parseInt(e.target.value, 10) || 1));
+                            const valor = e.target.value;
+                            if (valor === '') {
+                              setCantidad('');
+                            } else {
+                              const parsed = parseInt(valor, 10);
+                              setCantidad(Number.isNaN(parsed) ? '' : parsed);
+                            }
                             setMensajeValidacion(null);
                           }}
                           className="w-full h-11 px-3.5 bg-gray-900/90 border border-gray-700/80 rounded-xl text-white text-xs sm:text-sm placeholder-gray-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 focus:outline-none transition-colors"
