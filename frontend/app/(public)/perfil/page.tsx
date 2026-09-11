@@ -120,11 +120,21 @@ export default function PerfilPage() {
               >
                 Editar perfil
               </Link>
-              <Link 
-                href="/cotizaciones" 
+<Link
+                href="/cotizaciones"
                 className="flex items-center justify-center rounded-xl bg-cyan-600 hover:bg-cyan-500 py-2.5 text-xs font-semibold text-white transition-all shadow-lg shadow-cyan-950/50 text-center"
               >
                 Ver mis cotizaciones
+              </Link>
+            </div>
+
+            {/* Agenda */}
+            <div className="grid gap-3 sm:grid-cols-2 pt-4 border-t border-gray-800">
+              <Link
+                href="/perfil/agenda"
+                className="flex items-center justify-center rounded-xl border border-gray-700 bg-gray-900/80 hover:bg-gray-800 py-2.5 text-xs font-semibold text-white transition-all text-center"
+              >
+                Mi agenda
               </Link>
             </div>
           </div>

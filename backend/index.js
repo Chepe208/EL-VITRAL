@@ -956,6 +956,27 @@ async function ensurePasswordResetColumns() {
   }
 }
 
+async function ensureGoogleIdColumn() {
+  const googleColumn = await query("SHOW COLUMNS FROM usuarios LIKE 'google_id'");
+  if (!Array.isArray(googleColumn) || googleColumn.length === 0) {
+    await query('ALTER TABLE usuarios ADD COLUMN google_id VARCHAR(255) NULL');
+    await query('CREATE UNIQUE INDEX idx_usuarios_google_id ON usuarios (google_id)');
+  }
+}
+
+async function validarDominioEmail(email) {
+  const domain = email.split('@')[1];
+  try {
+    const mxRecords = await require('dns').promises.resolveMx(domain);
+    if (!mxRecords || mxRecords.length === 0) {
+      return 'El dominio del correo no es válido (no recibe correos)';
+    }
+  } catch (err) {
+    return 'El dominio del correo no existe o no es válido';
+  }
+  return null;
+}
+
 function calculatePrice(product, item) {
   const cantidad = Number(item.cantidad) || 0;
   const medida_largo = Number(item.medida_largo) || 0;
@@ -1196,20 +1217,28 @@ async function handleRequest(req, res) {
         const payload = ticket.getPayload();
         const email = sanitizeEmail(payload.email);
         const name = sanitizeString(payload.name);
+        const googleId = sanitizeString(payload.sub);
 
-        let userRows = await query('SELECT * FROM usuarios WHERE email = ?', [email]);
+        await ensureGoogleIdColumn();
+
+        let userRows = await query('SELECT * FROM usuarios WHERE google_id = ?', [googleId]);
         let user;
 
         if (!Array.isArray(userRows) || userRows.length === 0) {
-          // Register
-          const randomPassword = crypto.randomBytes(16).toString('hex');
-          const hashedPassword = await hashPassword(randomPassword);
-          const newUserId = crypto.randomUUID();
-          await query(
-            'INSERT INTO usuarios (id, nombre, email, password, telefono, direccion, rol, aprobado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [newUserId, name, email, hashedPassword, null, null, 'usuario', true]
-          );
+          // No existe con google_id: intentar ligar por email (cuenta existente creada con contraseña)
           userRows = await query('SELECT * FROM usuarios WHERE email = ?', [email]);
+          if (Array.isArray(userRows) && userRows.length > 0) {
+            await query('UPDATE usuarios SET google_id = ? WHERE id = ?', [googleId, userRows[0].id]);
+          } else {
+            const randomPassword = crypto.randomBytes(16).toString('hex');
+            const hashedPassword = await hashPassword(randomPassword);
+            const newUserId = crypto.randomUUID();
+            await query(
+              'INSERT INTO usuarios (id, nombre, email, password, telefono, direccion, rol, aprobado, google_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+              [newUserId, name, email, hashedPassword, null, null, 'usuario', true, googleId]
+            );
+          }
+          userRows = await query('SELECT * FROM usuarios WHERE google_id = ?', [googleId]);
         }
 
         user = userRows[0];
@@ -1254,12 +1283,17 @@ async function handleRequest(req, res) {
         return sendJSON(res, 400, { error: 'El correo es obligatorio' });
       }
 
+      const errorDominio = await validarDominioEmail(email);
+      if (errorDominio) {
+        return sendJSON(res, 400, { error: errorDominio });
+      }
+
       await ensurePasswordResetColumns();
 
       const rows = await query('SELECT id, nombre, email FROM usuarios WHERE email = ?', [email]);
       if (!Array.isArray(rows) || rows.length === 0) {
-        return sendJSON(res, 200, {
-          message: 'Si la cuenta existe, recibirás un correo con instrucciones para recuperar tu contraseña.',
+        return sendJSON(res, 404, {
+          error: 'No encontramos una cuenta registrada con este correo',
         });
       }
 
@@ -1286,7 +1320,7 @@ async function handleRequest(req, res) {
       }
 
       return sendJSON(res, 200, {
-        message: 'Si la cuenta existe, recibirás un correo con instrucciones para recuperar tu contraseña.',
+        message: 'Hemos enviado instrucciones para recuperar tu contraseña a tu correo.',
       });
     }
 
@@ -1406,6 +1440,11 @@ async function handleRequest(req, res) {
 
       if (!nombre || !email) {
         return sendJSON(res, 400, { error: 'Nombre y correo son obligatorios' });
+      }
+
+      const errorDominio = await validarDominioEmail(email);
+      if (errorDominio) {
+        return sendJSON(res, 400, { error: errorDominio });
       }
 
       const existing = await query('SELECT id FROM usuarios WHERE email = ? AND id != ?', [email, userData.id]);

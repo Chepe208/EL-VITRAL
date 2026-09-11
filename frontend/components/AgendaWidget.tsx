@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
 
@@ -196,6 +197,12 @@ function AgendaWidget() {
                   <div className="text-center text-slate-400 py-8">
                     <p className="text-xs sm:text-sm">No tienes citas próximas</p>
                     <p className="text-xs mt-2 text-slate-500">Agenda una ahora mismo</p>
+                    <Link
+                      href="/perfil/agenda"
+                      className="block w-full text-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-100 px-4 py-2.5 rounded-xl font-medium mt-4 text-xs sm:text-sm transition-colors"
+                    >
+                      Ver todas mis citas
+                    </Link>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -241,6 +248,12 @@ function AgendaWidget() {
                         +{citasProximas.length - 3} más
                       </p>
                     )}
+                    <Link
+                      href="/perfil/agenda"
+                      className="block w-full text-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-100 px-4 py-2.5 rounded-xl font-medium mt-3 text-xs sm:text-sm transition-colors"
+                    >
+                      Ver todas mis citas
+                    </Link>
                   </div>
                 )}
               </div>
