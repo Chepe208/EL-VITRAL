@@ -35,6 +35,7 @@ const {
   createSession,
   getSession,
   deleteSession,
+  deleteSessionsForUser,
 } = require('./lib/auth.js');
 const { createPasswordResetToken, sendPasswordResetEmail } = require('./lib/email.js');
 const { notifyOrderCreated, notifyOrderStateChange, notifyAppointment, notifyStockMovement, notifyPaymentReceived } = require('./lib/notifications.js');
@@ -1217,7 +1218,7 @@ async function handleRequest(req, res) {
       }
 
       if (!user.activo) {
-        return sendJSON(res, 403, { error: 'Cuenta inactiva' });
+        return sendJSON(res, 403, { error: 'Tu cuenta está desactivada, llámanos al 3137928483 para reactivarla.' });
       }
 
       if (!user.aprobado) {
@@ -1288,7 +1289,7 @@ async function handleRequest(req, res) {
         user = userRows[0];
 
         if (!user.activo) {
-          return sendJSON(res, 403, { error: 'Cuenta inactiva' });
+          return sendJSON(res, 403, { error: 'Tu cuenta está desactivada, llámanos al 3137928483 para reactivarla.' });
         }
         if (!user.aprobado) {
           return sendJSON(res, 403, { error: 'Cuenta en espera de aprobación' });
@@ -1427,7 +1428,7 @@ async function handleRequest(req, res) {
       }
 
       const user = userRows[0];
-      if (!user.activo) return sendJSON(res, 403, { error: 'Cuenta inactiva' });
+      if (!user.activo) return sendJSON(res, 403, { error: 'Tu cuenta está desactivada, llámanos al 3137928483 para reactivarla.' });
       if (!user.aprobado) return sendJSON(res, 403, { error: 'Cuenta en espera de aprobación' });
 
       deleteSession(cookies.sid);
@@ -1451,7 +1452,13 @@ async function handleRequest(req, res) {
       if (!userData) {
         return sendJSON(res, 401, { error: 'No sesión activa' });
       }
-      return sendJSON(res, 200, { authenticated: true, rol: userData.rol });
+      const rows = await query('SELECT activo, aprobado, rol FROM usuarios WHERE id = ?', [userData.id]);
+      if (!Array.isArray(rows) || rows.length === 0 || !rows[0].activo || !rows[0].aprobado) {
+        const cookies = parseCookies(req.headers.cookie || '');
+        deleteSession(cookies.sid);
+        return sendJSON(res, 401, { error: 'La cuenta no está activa' });
+      }
+      return sendJSON(res, 200, { authenticated: true, rol: rows[0].rol });
     }
 
     // ===== GET ME =====
@@ -1959,7 +1966,7 @@ async function handleRequest(req, res) {
     if (pathname === '/api/admin/usuarios' && method === 'GET') {
       const adminCheck = requireAdmin(req);
       if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
-      const usuarios = await query('SELECT id, nombre, email, telefono, direccion, rol, aprobado, ultimo_acceso FROM usuarios ORDER BY fecha_registro DESC');
+      const usuarios = await query('SELECT id, nombre, email, telefono, direccion, rol, aprobado, activo, ultimo_acceso FROM usuarios ORDER BY fecha_registro DESC');
       return sendJSON(res, 200, Array.isArray(usuarios) ? usuarios.map(formatNumericRow) : []);
     }
 
@@ -1967,12 +1974,55 @@ async function handleRequest(req, res) {
       const adminCheck = requireAdmin(req);
       if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const body = await parseBody(req);
-      const id = Number(body.id);
-      if (Number.isNaN(id)) {
+      const id = sanitizeString(body.id);
+      if (!id) {
         return sendJSON(res, 400, { error: 'ID de usuario inválido' });
       }
-      await query('UPDATE usuarios SET aprobado = 1 WHERE id = ?', [id]);
-      return sendJSON(res, 200, { message: 'Usuario aprobado' });
+
+      const targetRows = await query('SELECT id, rol, aprobado, activo FROM usuarios WHERE id = ?', [id]);
+      if (!Array.isArray(targetRows) || targetRows.length === 0) {
+        return sendJSON(res, 404, { error: 'Usuario no encontrado' });
+      }
+      const target = targetRows[0];
+      const changes = [];
+      const values = [];
+
+      if (typeof body.aprobado === 'boolean') {
+        changes.push('aprobado = ?');
+        values.push(body.aprobado ? 1 : 0);
+      }
+      if (typeof body.activo === 'boolean') {
+        changes.push('activo = ?');
+        values.push(body.activo ? 1 : 0);
+        if (!body.activo) {
+          changes.push('aprobado = 0');
+        }
+      }
+      if (body.rol !== undefined) {
+        const rol = sanitizeString(body.rol);
+        if (!['usuario', 'admin'].includes(rol)) {
+          return sendJSON(res, 400, { error: 'Rol inválido' });
+        }
+        if (String(adminCheck.user.id) === String(id)) {
+          return sendJSON(res, 400, { error: 'No puedes cambiar tu propio rol' });
+        }
+        changes.push('rol = ?');
+        values.push(rol);
+      }
+      if (changes.length === 0) {
+        return sendJSON(res, 400, { error: 'No hay cambios válidos' });
+      }
+
+      values.push(id);
+      await query(`UPDATE usuarios SET ${changes.join(', ')} WHERE id = ?`, values);
+      if (body.activo === false || body.aprobado === false) {
+        deleteSessionsForUser(id);
+      }
+      const updatedRows = await query(
+        'SELECT id, nombre, email, telefono, direccion, rol, aprobado, activo, ultimo_acceso FROM usuarios WHERE id = ?',
+        [id]
+      );
+      return sendJSON(res, 200, { message: 'Usuario actualizado correctamente', usuario: updatedRows[0] });
     }
 
     // ===== COTIZACIONES =====

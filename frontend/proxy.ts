@@ -40,7 +40,7 @@ async function checkSession(request: NextRequest) {
       headers: { cookie: request.headers.get('cookie') || '' },
       cache: 'no-store',
     })
-    if (res.status === 401) return { authenticated: false, rol: null }
+    if (!res.ok) return { authenticated: false, rol: null }
     const data = await res.json()
     return { authenticated: true, rol: data.rol ?? null }
   } catch {

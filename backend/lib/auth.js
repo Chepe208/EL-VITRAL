@@ -95,6 +95,14 @@ function deleteSession(sid) {
   sessions.delete(sid);
 }
 
+function deleteSessionsForUser(userId) {
+  for (const [sid, session] of sessions.entries()) {
+    if (String(session.userId) === String(userId)) {
+      sessions.delete(sid);
+    }
+  }
+}
+
 function generateAccessToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
 }
@@ -229,4 +237,5 @@ module.exports = {
   createSession,
   getSession,
   deleteSession,
+  deleteSessionsForUser,
 };
