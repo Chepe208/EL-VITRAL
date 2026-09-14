@@ -27,6 +27,7 @@ export default function AdminProyectosPage() {
   const [showEditor, setShowEditor] = useState(false);
   const [currentProject, setCurrentProject] = useState<Proyecto | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [mensaje, setMensaje] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
 
   const fetchProjects = async () => {
     try {
@@ -90,7 +91,7 @@ export default function AdminProyectosPage() {
 
   const saveProject = async () => {
     if (!form.titulo.trim() || !form.resumen.trim() || !form.imagen_url.trim()) {
-      alert('Completa el título, el resumen y la URL de la imagen.');
+      setMensaje({ tipo: 'error', texto: 'Completa el título, el resumen y la URL de la imagen.' });
       return;
     }
 
@@ -107,15 +108,15 @@ export default function AdminProyectosPage() {
       );
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        alert(data.error || 'No se pudo guardar el proyecto.');
+        setMensaje({ tipo: 'error', texto: data.error || 'No se pudo guardar el proyecto.' });
         return;
       }
       setShowEditor(false);
       await fetchProjects();
-      alert(editing ? 'Proyecto actualizado correctamente.' : 'Proyecto creado correctamente.');
+      setMensaje({ tipo: 'ok', texto: editing ? 'Proyecto actualizado correctamente.' : 'Proyecto creado correctamente.' });
     } catch (err) {
       console.error(err);
-      alert('No se pudo guardar el proyecto.');
+      setMensaje({ tipo: 'error', texto: 'No se pudo guardar el proyecto.' });
     }
   };
 
@@ -132,6 +133,12 @@ export default function AdminProyectosPage() {
             <Link href="/admin" className="rounded-lg bg-gray-700 px-4 py-2 text-white hover:bg-gray-600">← Volver al panel</Link>
           </div>
         </div>
+
+        {mensaje && (
+          <div className={`mb-6 rounded-xl border p-4 text-sm ${mensaje.tipo === 'ok' ? 'border-green-600 bg-green-900/30 text-green-200' : 'border-red-500 bg-red-900/30 text-red-200'}`}>
+            {mensaje.texto}
+          </div>
+        )}
 
         {loading ? <p className="text-white">Cargando proyectos...</p> : error ? (
           <div className="rounded-xl border border-red-500 bg-red-900/30 p-5 text-red-200">{error}</div>

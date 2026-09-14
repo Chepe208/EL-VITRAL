@@ -23,6 +23,8 @@ export default function AdminProductosPage() {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Producto | null>(null);
+  const [mensaje, setMensaje] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [form, setForm] = useState({
     nombre: '',
     descripcion: '',
@@ -115,24 +117,21 @@ export default function AdminProductosPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        alert(data?.error || (isEditing ? 'Error al actualizar el producto' : 'Error al crear el producto'));
+        setMensaje({ tipo: 'error', texto: data?.error || (isEditing ? 'Error al actualizar el producto' : 'Error al crear el producto') });
         return;
       }
 
       fetchProductos();
       closeModal();
-      alert(isEditing ? 'Producto actualizado correctamente' : 'Producto creado correctamente');
+      setMensaje({ tipo: 'ok', texto: isEditing ? 'Producto actualizado correctamente' : 'Producto creado correctamente' });
     } catch (err) {
       console.error(err);
-      alert(isEditing ? 'Error al guardar el producto' : 'Error al crear el producto');
+      setMensaje({ tipo: 'error', texto: isEditing ? 'Error al guardar el producto' : 'Error al crear el producto' });
     }
   };
 
   const deleteProduct = async () => {
     if (!currentProduct) return;
-
-    const confirmar = confirm('¿Quieres eliminar este producto?');
-    if (!confirmar) return;
 
     try {
       const res = await fetch(`/api/admin/productos/${currentProduct.id}`, {
@@ -142,16 +141,16 @@ export default function AdminProductosPage() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        alert(data?.error || 'Error al eliminar el producto');
+        setMensaje({ tipo: 'error', texto: data?.error || 'Error al eliminar el producto' });
         return;
       }
 
       fetchProductos();
       closeModal();
-      alert('Producto eliminado correctamente');
+      setMensaje({ tipo: 'ok', texto: 'Producto eliminado correctamente' });
     } catch (err) {
       console.error(err);
-      alert('Error al eliminar el producto');
+      setMensaje({ tipo: 'error', texto: 'Error al eliminar el producto' });
     }
   };
 
@@ -200,6 +199,12 @@ export default function AdminProductosPage() {
           </Link>
           </div>
         </div>
+
+        {mensaje && (
+          <div className={`mb-6 rounded-xl border p-4 text-sm ${mensaje.tipo === 'ok' ? 'border-green-600 bg-green-900/30 text-green-200' : 'border-red-500 bg-red-900/30 text-red-200'}`}>
+            {mensaje.texto}
+          </div>
+        )}
 
         {error ? (
           <div className="rounded-xl bg-red-900/30 border border-red-500 p-6 text-red-200">
@@ -358,12 +363,32 @@ export default function AdminProductosPage() {
               </div>
             </div>
             <div className="flex flex-col gap-3 border-t border-slate-800 px-5 sm:px-6 py-4 sm:py-5 sm:flex-row sm:justify-between shrink-0 bg-slate-950">
-              <button
-                onClick={deleteProduct}
-                className="w-full rounded-2xl bg-red-600 px-5 py-3 text-white hover:bg-red-500 transition-colors sm:w-auto"
-              >
-                Eliminar
-              </button>
+              {confirmDelete ? (
+                <div className="flex flex-col gap-2 w-full sm:w-auto">
+                  <p className="text-sm text-red-200">¿Seguro que quieres eliminar este producto?</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setConfirmDelete(false)}
+                      className="rounded-2xl border border-slate-700 px-4 py-2 text-slate-200 hover:border-slate-500 text-sm"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={deleteProduct}
+                      className="rounded-2xl bg-red-600 px-4 py-2 text-white hover:bg-red-500 transition-colors text-sm"
+                    >
+                      Sí, eliminar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="w-full rounded-2xl bg-red-600 px-5 py-3 text-white hover:bg-red-500 transition-colors sm:w-auto"
+                >
+                  Eliminar
+                </button>
+              )}
               <div className="flex gap-3 w-full sm:w-auto">
                 <button
                   onClick={closeModal}

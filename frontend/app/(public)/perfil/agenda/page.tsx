@@ -25,6 +25,20 @@ const tiposIconos: Record<string, string> = {
   otro: '📅',
 };
 
+const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+const horasDisponibles = [
+  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+  '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+  '16:00', '16:30', '17:00',
+];
+
+function fechaParaDisplay(fecha: string) {
+  const d = new Date(`${fecha}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return fecha;
+  return `${diasSemana[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+}
+
 const estadoColores: Record<string, string> = {
   pendiente: 'bg-yellow-900 text-yellow-200',
   confirmada: 'bg-green-900 text-green-200',
@@ -36,9 +50,11 @@ export default function MiAgendaPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [citas, setCitas] = useState<Cita[]>([]);
+  const [diasDisponibles, setDiasDisponibles] = useState<string[]>([]);
   const [loadingCitas, setLoadingCitas] = useState(true);
   const [error, setError] = useState('');
   const [filtro, setFiltro] = useState<string>('todas');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -46,16 +62,10 @@ export default function MiAgendaPage() {
     titulo: '',
     descripcion: '',
     fecha_cita: '',
+    hora_cita: '10:00',
     tipo: 'otro' as Cita['tipo'],
     notas: '',
   });
-
-  const getMinDateTimeLocal = () => {
-    const now = new Date();
-    now.setSeconds(0, 0);
-    const pad = (n: number) => n.toString().padStart(2, '0');
-    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
-  };
 
   const fetchCitas = useCallback(async () => {
     const res = await fetch('/api/agenda/citas', { credentials: 'include' });
@@ -84,6 +94,21 @@ export default function MiAgendaPage() {
       .finally(() => {
         if (!cancelled) setLoadingCitas(false);
       });
+    fetch('/api/agenda/dias-disponibles', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (!cancelled) {
+          const hoy = new Date();
+          hoy.setHours(0, 0, 0, 0);
+          const dias = (Array.isArray(data) ? data : []).filter((d: string) => {
+            const f = new Date(`${d}T12:00:00`);
+            return !Number.isNaN(f.getTime()) && f.getDay() !== 0 && f.getDay() !== 6 && f.getTime() >= hoy.getTime();
+          });
+          setDiasDisponibles(dias);
+          setFormData((prev) => ({ ...prev, fecha_cita: prev.fecha_cita || (dias[0] || '') }));
+        }
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
@@ -92,13 +117,13 @@ export default function MiAgendaPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!formData.titulo.trim() || !formData.fecha_cita) {
-      setError('Por favor completa el título y la fecha de la cita.');
+    if (!formData.titulo.trim() || !formData.fecha_cita || !formData.hora_cita) {
+      setError('Por favor completa el título, el día y la hora de la cita.');
       return;
     }
-    const selected = new Date(formData.fecha_cita);
+    const selected = new Date(`${formData.fecha_cita}T${formData.hora_cita}:00`);
     if (selected.getTime() < Date.now()) {
-      setError('La fecha de la cita no puede ser anterior a la fecha actual.');
+      setError('La hora de la cita no puede ser anterior a la fecha y hora actual.');
       return;
     }
 
@@ -111,13 +136,14 @@ export default function MiAgendaPage() {
         body: JSON.stringify({
           ...formData,
           titulo: formData.titulo.trim(),
-          fecha_cita: new Date(formData.fecha_cita).toISOString(),
+          fecha_cita: selected.toISOString(),
         }),
       });
       if (res.ok) {
-        setFormData({ titulo: '', descripcion: '', fecha_cita: '', tipo: 'otro', notas: '' });
+        setFormData({ titulo: '', descripcion: '', fecha_cita: diasDisponibles[0] || '', hora_cita: '10:00', tipo: 'otro', notas: '' });
         setShowForm(false);
         await fetchCitas();
+        setError('');
       } else {
         const data = await res.json().catch(() => ({}));
         setError(data.error || 'Error al crear la cita.');
@@ -130,7 +156,6 @@ export default function MiAgendaPage() {
   };
 
   const handleDeleteCita = async (citaId: number) => {
-    if (!confirm('¿Deseas eliminar esta cita?')) return;
     try {
       const res = await fetch('/api/agenda/citas', {
         method: 'DELETE',
@@ -146,6 +171,8 @@ export default function MiAgendaPage() {
       }
     } catch {
       setError('Error de conexión al eliminar la cita.');
+    } finally {
+      setConfirmDeleteId(null);
     }
   };
 
@@ -192,6 +219,12 @@ export default function MiAgendaPage() {
           </div>
         </div>
 
+        <div className="mb-6 rounded-2xl border border-cyan-800/40 bg-cyan-950/30 p-4 text-xs text-cyan-200/90 leading-relaxed">
+          <span className="font-semibold text-cyan-200">Reglas de agenda:</span> Solo se pueden agendar citas de lunes a viernes,
+          entre las 8:00 a. m. y las 5:00 p. m., y únicamente en las fechas habilitadas por el administrador.
+          Después de crear una cita deberás esperar 20 minutos antes de poder agendar otra.
+        </div>
+
         {error && (
           <div className="mb-5 rounded-2xl border border-rose-600/30 bg-rose-600/10 p-4 text-sm text-rose-200">
             {error}
@@ -211,14 +244,38 @@ export default function MiAgendaPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1.5">Fecha y Hora *</label>
-              <input
-                type="datetime-local"
+              <label className="block text-xs font-medium text-gray-300 mb-1.5">Día disponible *</label>
+              <select
                 value={formData.fecha_cita}
                 onChange={e => setFormData({ ...formData, fecha_cita: e.target.value })}
-                min={getMinDateTimeLocal()}
-                className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
-              />
+                disabled={diasDisponibles.length === 0}
+                className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none disabled:opacity-50"
+              >
+                {diasDisponibles.length === 0 ? (
+                  <option value="">Sin fechas disponibles</option>
+                ) : (
+                  diasDisponibles.map(dia => (
+                    <option key={dia} value={dia}>{fechaParaDisplay(dia)}</option>
+                  ))
+                )}
+              </select>
+              {diasDisponibles.length === 0 && (
+                <p className="mt-1 text-xs text-yellow-400">
+                  El administrador aún no ha habilitado fechas. Solo podrás agendar en los días que se habiliten.
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-300 mb-1.5">Hora (8:00 a. m. a 5:00 p. m.) *</label>
+              <select
+                value={formData.hora_cita}
+                onChange={e => setFormData({ ...formData, hora_cita: e.target.value })}
+                className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none"
+              >
+                {horasDisponibles.map(hora => (
+                  <option key={hora} value={hora}>{hora}</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-300 mb-1.5">Tipo</label>
@@ -228,10 +285,8 @@ export default function MiAgendaPage() {
                 className="w-full rounded-xl border border-gray-700 bg-gray-950 px-4 py-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none"
               >
                 <option value="otro">Otro</option>
-                <option value="entrega">Entrega</option>
                 <option value="consulta">Consulta</option>
                 <option value="medidas">Medidas</option>
-                <option value="pago">Pago</option>
               </select>
             </div>
             <div>
@@ -319,12 +374,30 @@ export default function MiAgendaPage() {
                   })}
                 </div>
                 <div className="mt-3 pt-3 border-t border-gray-800 flex justify-end">
-                  <button
-                    onClick={() => handleDeleteCita(cita.id)}
-                    className="text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    Eliminar
-                  </button>
+                  {confirmDeleteId === cita.id ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">¿Eliminar esta cita?</span>
+                      <button
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="text-xs text-gray-400 hover:text-gray-200 px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCita(cita.id)}
+                        className="text-xs text-rose-300 hover:text-rose-200 bg-rose-500/20 px-3 py-1.5 rounded-lg transition-colors font-semibold"
+                      >
+                        Sí, eliminar
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDeleteId(cita.id)}
+                      className="text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      Eliminar
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

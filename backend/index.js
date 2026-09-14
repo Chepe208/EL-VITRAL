@@ -964,6 +964,50 @@ async function ensureGoogleIdColumn() {
   }
 }
 
+async function ensureAgendaDiasDisponiblesTable() {
+  try {
+    await query(
+      'CREATE TABLE IF NOT EXISTS agenda_dias_disponibles (' +
+        'id INT PRIMARY KEY AUTO_INCREMENT, ' +
+        'fecha DATE NOT NULL, ' +
+        'fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ' +
+        'UNIQUE KEY uq_agenda_fecha (fecha)' +
+        ')'
+    );
+  } catch (error) {
+    console.error('Error ensuring agenda_dias_disponibles table:', error.message);
+  }
+}
+
+async function ensureUltimaAgendaColumn() {
+  const col = await query("SHOW COLUMNS FROM usuarios LIKE 'ultima_agenda'");
+  if (!Array.isArray(col) || col.length === 0) {
+    await query('ALTER TABLE usuarios ADD COLUMN ultima_agenda DATETIME NULL');
+  }
+}
+
+const TIPOS_CITA_VALIDOS = ['consulta', 'medidas', 'otro'];
+
+const MINUTO_INICIO_JORNADA = 8 * 60;
+const MINUTO_FIN_JORNADA = 17 * 60;
+
+function validarHorarioCita(fecha) {
+  const dia = fecha.getDay();
+  if (dia === 0 || dia === 6) {
+    return 'Las citas solo se pueden agendar de lunes a viernes.';
+  }
+  const totalMinutos = fecha.getHours() * 60 + fecha.getMinutes();
+  if (totalMinutos < MINUTO_INICIO_JORNADA || totalMinutos > MINUTO_FIN_JORNADA) {
+    return 'Las citas solo se pueden agendar entre las 8:00 a. m. y las 5:00 p. m.';
+  }
+  return null;
+}
+
+function toFechaLocalDateKey(fecha) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${fecha.getFullYear()}-${pad(fecha.getMonth() + 1)}-${pad(fecha.getDate())}`;
+}
+
 async function validarDominioEmail(email) {
   const domain = email.split('@')[1];
   try {
@@ -2566,6 +2610,22 @@ async function handleRequest(req, res) {
       return sendJSON(res, 200, Array.isArray(rows) ? rows.map(formatNumericRow) : []);
     }
 
+    if (pathname === '/api/agenda/dias-disponibles' && method === 'GET') {
+      const userData = getUserFromRequest(req);
+      if (!userData) {
+        return sendJSON(res, 401, { error: 'No autorizado' });
+      }
+      await ensureAgendaDiasDisponiblesTable();
+      const rows = await query(
+        'SELECT fecha FROM agenda_dias_disponibles ORDER BY fecha ASC'
+      );
+      const fechas = (Array.isArray(rows) ? rows : []).map((r) => {
+        const f = new Date(r.fecha);
+        return Number.isNaN(f.getTime()) ? String(r.fecha).slice(0, 10) : toFechaLocalDateKey(f);
+      });
+      return sendJSON(res, 200, fechas);
+    }
+
     if (pathname === '/api/agenda/citas' && method === 'POST') {
       const userData = getUserFromRequest(req);
       if (!userData) {
@@ -2583,10 +2643,43 @@ async function handleRequest(req, res) {
         return sendJSON(res, 400, { error: 'Título y fecha de cita son obligatorios' });
       }
 
+      if (!TIPOS_CITA_VALIDOS.includes(tipo)) {
+        return sendJSON(res, 400, { error: 'El tipo de cita seleccionado no es válido' });
+      }
+
+      const errorHorario = validarHorarioCita(fecha_cita);
+      if (errorHorario) {
+        return sendJSON(res, 400, { error: errorHorario });
+      }
+
+      await ensureAgendaDiasDisponiblesTable();
+      const diaClave = toFechaLocalDateKey(fecha_cita);
+      const diasRows = await query('SELECT id FROM agenda_dias_disponibles WHERE fecha = ?', [diaClave]);
+      if (!Array.isArray(diasRows) || diasRows.length === 0) {
+        return sendJSON(res, 400, {
+          error: 'El administrador aún no ha habilitado esta fecha. Solo se pueden agendar citas en las fechas permitidas.',
+        });
+      }
+
+      await ensureUltimaAgendaColumn();
+      const userRows = await query('SELECT ultima_agenda FROM usuarios WHERE id = ?', [userData.id]);
+      const ultimaAgenda = Array.isArray(userRows) && userRows.length > 0 ? userRows[0].ultima_agenda : null;
+      if (ultimaAgenda) {
+        const diffMs = Date.now() - new Date(ultimaAgenda).getTime();
+        if (diffMs < 20 * 60 * 1000) {
+          const faltandoMin = Math.ceil((20 * 60 * 1000 - diffMs) / 60000);
+          return sendJSON(res, 429, {
+            error: `Debes esperar ${faltandoMin} minuto(s) antes de poder agendar otra cita. Las siguientes citas solo pueden crearse cada 20 minutos.`,
+          });
+        }
+      }
+
       const result = await query(
         'INSERT INTO citas_agenda (usuario_id, titulo, descripcion, fecha_cita, tipo, estado, notas) VALUES (?, ?, ?, ?, ?, ?, ?)',
         [userData.id, titulo, descripcion || null, fecha_cita, tipo, 'pendiente', notas || null]
       );
+
+      await query('UPDATE usuarios SET ultima_agenda = NOW() WHERE id = ?', [userData.id]);
 
       if (userData.email) {
         notifyAppointment(userData.email, titulo, fecha_cita, false);
@@ -2675,6 +2768,69 @@ async function handleRequest(req, res) {
         console.error('Error fetching admin agenda:', error);
         return sendJSON(res, 500, { error: 'Error al cargar la agenda: ' + error.message });
       }
+    }
+
+    if (pathname === '/api/admin/agenda/dias-disponibles') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
+      await ensureAgendaDiasDisponiblesTable();
+
+      if (method === 'GET') {
+        const rows = await query(
+          'SELECT fecha FROM agenda_dias_disponibles ORDER BY fecha ASC'
+        );
+        const fechas = (Array.isArray(rows) ? rows : []).map((r) => {
+          const f = new Date(r.fecha);
+          return Number.isNaN(f.getTime()) ? String(r.fecha).slice(0, 10) : toFechaLocalDateKey(f);
+        });
+        return sendJSON(res, 200, fechas);
+      }
+
+      if (method === 'POST') {
+        const body = await parseBody(req);
+        const fechaStr = String(body.fecha || '').slice(0, 10);
+        const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fechaStr);
+        if (!match) {
+          return sendJSON(res, 400, { error: 'Fecha inválida. Usa el formato YYYY-MM-DD.' });
+        }
+        const fecha = new Date(`${match[1]}-${match[2]}-${match[3]}T12:00:00`);
+        if (Number.isNaN(fecha.getTime())) {
+          return sendJSON(res, 400, { error: 'Fecha inválida.' });
+        }
+
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        if (fecha.getTime() < hoy.getTime()) {
+          return sendJSON(res, 400, { error: 'No puedes habilitar fechas en el pasado.' });
+        }
+
+        const dia = fecha.getDay();
+        if (dia === 0 || dia === 6) {
+          return sendJSON(res, 400, { error: 'Solo se permiten días de lunes a viernes.' });
+        }
+
+        try {
+          await query('INSERT INTO agenda_dias_disponibles (fecha) VALUES (?)', [fechaStr]);
+        } catch (error) {
+          if (error && error.code === 'ER_DUP_ENTRY') {
+            return sendJSON(res, 409, { error: 'Esa fecha ya está habilitada.' });
+          }
+          throw error;
+        }
+        return sendJSON(res, 201, { mensaje: 'Fecha habilitada correctamente' });
+      }
+
+      if (method === 'DELETE') {
+        const body = await parseBody(req);
+        const fechaStr = String(body.fecha || '').slice(0, 10);
+        if (!/^(\d{4})-(\d{2})-(\d{2})$/.test(fechaStr)) {
+          return sendJSON(res, 400, { error: 'Fecha inválida.' });
+        }
+        await query('DELETE FROM agenda_dias_disponibles WHERE fecha = ?', [fechaStr]);
+        return sendJSON(res, 200, { mensaje: 'Fecha deshabilitada correctamente' });
+      }
+
+      return sendJSON(res, 405, { error: 'Método no permitido' });
     }
 
     return sendJSON(res, 404, { error: 'Ruta no encontrada' });

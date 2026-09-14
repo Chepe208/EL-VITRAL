@@ -99,11 +99,11 @@ export default function AdminCotizacionesPage() {
         setSelectedCotizacion(data);
         setShowModal(true);
       } else {
-        alert('Error al cargar los detalles de la cotización');
+        setError('Error al cargar los detalles de la cotización');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al cargar los detalles');
+      setError('Error al cargar los detalles');
     }
   };
 

@@ -40,10 +40,15 @@ const estadoColores: Record<string, string> = {
 export default function AgendaAdminPage() {
   const [citas, setCitas] = useState<Cita[]>([]);
   const [usuarios, setUsuarios] = useState<Record<number, Usuario>>({});
+  const [diasDisponibles, setDiasDisponibles] = useState<string[]>([]);
+  const [nuevaFecha, setNuevaFecha] = useState('');
+  const [mensajeDias, setMensajeDias] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filtro, setFiltro] = useState<string>('todas');
   const [mobileActionCita, setMobileActionCita] = useState<Cita | null>(null);
+  const [confirmFecha, setConfirmFecha] = useState<string | null>(null);
+  const [confirmCitaId, setConfirmCitaId] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -53,19 +58,27 @@ export default function AgendaAdminPage() {
         
         const usuariosRes = await fetch('/api/admin/usuarios', { credentials: 'include' });
 
+        const diasRes = await fetch('/api/admin/agenda/dias-disponibles', { credentials: 'include' });
+
         if (!citasRes.ok) {
-          const citasError = await citasRes.json().catch(() => ({}));
-          setError(`Error al cargar citas: ${citasRes.status} - ${JSON.stringify(citasError)}`);
+          setError('Error al cargar citas. Por favor, intenta de nuevo.');
           return;
         }
 
         if (!usuariosRes.ok) {
-          setError(`Error al cargar usuarios: ${usuariosRes.status}`);
+          setError('Error al cargar usuarios. Por favor, intenta de nuevo.');
           return;
         }
 
         const citasData = await citasRes.json();
         const usuariosData = await usuariosRes.json();
+
+        if (diasRes.ok) {
+          const diasData = await diasRes.json();
+          setDiasDisponibles(Array.isArray(diasData) ? diasData : []);
+        } else {
+          setMensajeDias({ tipo: 'error', texto: 'Error al cargar las fechas disponibles. Por favor, intenta de nuevo.' });
+        }
 
         setCitas(citasData.sort((a: Cita, b: Cita) => new Date(b.fecha_cita).getTime() - new Date(a.fecha_cita).getTime()));
         
@@ -74,9 +87,8 @@ export default function AgendaAdminPage() {
           usuariosMap[u.id] = u;
         });
         setUsuarios(usuariosMap);
-      } catch (error) {
-        console.error('Error cargando datos:', error);
-        setError(`Error de conexión: ${error}`);
+      } catch {
+        setError('Error de conexión. Por favor, intenta de nuevo.');
       } finally {
         setLoading(false);
       }
@@ -84,6 +96,58 @@ export default function AgendaAdminPage() {
 
     fetchData();
   }, [router]);
+
+  const handleAgregarFecha = async () => {
+    if (!nuevaFecha) return;
+    setMensajeDias(null);
+    try {
+      const res = await fetch('/api/admin/agenda/dias-disponibles', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fecha: nuevaFecha }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setDiasDisponibles((prev) => [...prev, nuevaFecha].sort());
+        setNuevaFecha('');
+        setMensajeDias({ tipo: 'ok', texto: 'Fecha habilitada correctamente.' });
+      } else {
+        setMensajeDias({ tipo: 'error', texto: data.error || `Error (${res.status})` });
+      }
+    } catch {
+      setMensajeDias({ tipo: 'error', texto: 'Error de conexión al habilitar la fecha.' });
+    }
+  };
+
+  const handleEliminarFecha = async (fecha: string) => {
+    setMensajeDias(null);
+    try {
+      const res = await fetch('/api/admin/agenda/dias-disponibles', {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fecha }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setDiasDisponibles((prev) => prev.filter((d) => d !== fecha));
+        setMensajeDias({ tipo: 'ok', texto: 'Fecha deshabilitada correctamente.' });
+      } else {
+        setMensajeDias({ tipo: 'error', texto: data.error || `Error (${res.status})` });
+      }
+    } catch {
+      setMensajeDias({ tipo: 'error', texto: 'Error de conexión al deshabilitar la fecha.' });
+    } finally {
+      setConfirmFecha(null);
+    }
+  };
+
+  const fechaParaDisplay = (fecha: string) => {
+    const d = new Date(`${fecha}T12:00:00`);
+    if (Number.isNaN(d.getTime())) return fecha;
+    return d.toLocaleDateString('es-ES', { weekday: 'long', day: '2-digit', month: 'short', year: 'numeric' });
+  };
 
   const handleActualizarEstado = async (citaId: number, nuevoEstado: string) => {
     try {
@@ -118,8 +182,6 @@ export default function AgendaAdminPage() {
   };
 
   const handleEliminarCita = async (citaId: number) => {
-    if (!confirm('¿Deseas eliminar esta cita?')) return;
-
     try {
       const res = await fetch('/api/agenda/citas', {
         method: 'DELETE',
@@ -133,6 +195,8 @@ export default function AgendaAdminPage() {
       }
     } catch (error) {
       console.error('Error eliminando cita:', error);
+    } finally {
+      setConfirmCitaId(null);
     }
   };
 
@@ -186,6 +250,72 @@ export default function AgendaAdminPage() {
           >
             ← Volver al Panel
           </Link>
+        </div>
+
+        {/* Días disponibles */}
+        <div className="bg-slate-800 rounded-lg p-5 mb-6">
+          <h2 className="text-lg font-semibold text-white mb-1">Fechas disponibles para agendar</h2>
+          <p className="text-sm text-gray-400 mb-4">
+            Solo en estas fechas los usuarios podrán crear citas (lunes a viernes, 8:00 a. m. a 5:00 p. m.).
+          </p>
+
+          {mensajeDias && (
+            <div className={`mb-3 p-3 rounded-lg text-sm ${mensajeDias.tipo === 'ok' ? 'bg-green-900/40 border border-green-700 text-green-200' : 'bg-red-900/40 border border-red-700 text-red-200'}`}>
+              {mensajeDias.texto}
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3 mb-4">
+            <input
+              type="date"
+              value={nuevaFecha}
+              onChange={(e) => setNuevaFecha(e.target.value)}
+              className="min-h-[44px] flex-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-600 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={handleAgregarFecha}
+              className="min-h-[44px] inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg transition-colors font-medium"
+            >
+              + Habilitar fecha
+            </button>
+          </div>
+
+          {diasDisponibles.length === 0 ? (
+            <p className="text-sm text-gray-400">No hay fechas habilitadas. Agrega fechas para que los usuarios puedan agendar.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {diasDisponibles.map((fecha) => (
+                <span key={fecha} className="inline-flex items-center gap-2 bg-slate-900 border border-slate-600 rounded-lg px-3 py-1.5 text-sm text-gray-200">
+                  {fechaParaDisplay(fecha)}
+                  {confirmFecha === fecha ? (
+                    <>
+                      <span className="text-xs text-gray-400">¿Deshabilitar?</span>
+                      <button
+                        onClick={() => setConfirmFecha(null)}
+                        className="text-xs text-gray-400 hover:text-gray-200 font-semibold ml-1"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={() => handleEliminarFecha(fecha)}
+                        className="text-xs text-red-300 hover:text-red-200 font-bold ml-1"
+                      >
+                        Sí
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmFecha(fecha)}
+                      className="text-red-400 hover:text-red-300 font-bold ml-1"
+                      title="Deshabilitar fecha"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Filtros */}
@@ -365,12 +495,29 @@ export default function AgendaAdminPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="hidden md:block">
-                            <button
-                              onClick={() => handleEliminarCita(cita.id)}
-                              className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors"
-                            >
-                              Eliminar
-                            </button>
+                            {confirmCitaId === cita.id ? (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => setConfirmCitaId(null)}
+                                  className="text-gray-400 hover:text-gray-200 text-sm"
+                                >
+                                  Cancelar
+                                </button>
+                                <button
+                                  onClick={() => handleEliminarCita(cita.id)}
+                                  className="text-red-300 hover:text-red-200 text-sm font-semibold"
+                                >
+                                  Sí, eliminar
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setConfirmCitaId(cita.id)}
+                                className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors"
+                              >
+                                Eliminar
+                              </button>
+                            )}
                           </div>
                           <div className="md:hidden">
                             <button
@@ -429,16 +576,36 @@ export default function AgendaAdminPage() {
                 </div>
 
                 <div className="pt-4 border-t border-gray-700">
-                  <button
-                    onClick={() => {
-                      handleEliminarCita(mobileActionCita.id);
-                      setMobileActionCita(null);
-                    }}
-                    className="w-full min-h-[48px] flex items-center justify-center gap-2 text-red-400 bg-red-900/30 hover:bg-red-900/50 rounded-xl px-4 text-base font-semibold transition-colors border border-red-800/50"
-                  >
-                    <span className="material-symbols-outlined">delete</span>
-                    Eliminar Cita
-                  </button>
+                  {confirmCitaId === mobileActionCita.id ? (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-sm text-red-300 text-center">¿Seguro que quieres eliminar esta cita?</p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setConfirmCitaId(null)}
+                          className="w-full min-h-[48px] rounded-xl text-gray-300 border border-gray-600 hover:bg-gray-800 px-4 font-semibold transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleEliminarCita(mobileActionCita.id);
+                            setMobileActionCita(null);
+                          }}
+                          className="w-full min-h-[48px] rounded-xl text-red-300 bg-red-900/40 hover:bg-red-900/60 px-4 font-semibold transition-colors border border-red-800/50"
+                        >
+                          Sí, eliminar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmCitaId(mobileActionCita.id)}
+                      className="w-full min-h-[48px] flex items-center justify-center gap-2 text-red-400 bg-red-900/30 hover:bg-red-900/50 rounded-xl px-4 text-base font-semibold transition-colors border border-red-800/50"
+                    >
+                      <span className="material-symbols-outlined">delete</span>
+                      Eliminar Cita
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

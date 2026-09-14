@@ -127,3 +127,10 @@ CREATE TABLE citas_agenda (
     INDEX idx_usuario (usuario_id),
     INDEX idx_fecha_cita (fecha_cita)
 );
+
+CREATE TABLE agenda_dias_disponibles (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    fecha DATE NOT NULL,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_agenda_fecha (fecha)
+);

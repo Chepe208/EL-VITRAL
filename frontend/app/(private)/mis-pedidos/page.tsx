@@ -40,6 +40,7 @@ export default function MisPedidosPage() {
   const [sendingSurvey, setSendingSurvey] = useState(false);
   const [showThankYouModal, setShowThankYouModal] = useState(false);
   const [payModalPedido, setPayModalPedido] = useState<Pedido | null>(null);
+  const [mensaje, setMensaje] = useState('');
 
   useEffect(() => {
     fetch('/api/pedidos', { credentials: 'include' })
@@ -85,13 +86,14 @@ export default function MisPedidosPage() {
                 setPedidos(prev => prev.map(p => p.id === Number(pedidoId)
                   ? { ...p, pago: data?.pago || tipoPago, estado: data?.estado || p.estado }
                   : p));
+                setMensaje('');
               } else {
                 console.error('Pago verificación fallida', data);
-                alert(data?.error || data?.friendly || 'No se pudo verificar el pago.');
+                setMensaje(data?.error || data?.friendly || 'No se pudo verificar el pago.');
               }
             } catch (err) {
               console.error('Error al llamar pago-completado:', err);
-              alert('Error al verificar el pago.');
+              setMensaje('Error al verificar el pago.');
             } finally {
               const url = new URL(window.location.href);
               url.search = '';
@@ -103,7 +105,7 @@ export default function MisPedidosPage() {
           url.search = '';
           window.history.replaceState({}, '', url.toString());
           if (cancel === '1') {
-            alert('Se canceló el pago.');
+            Promise.resolve().then(() => setMensaje('Se canceló el pago.'));
           }
         }
       }
@@ -116,7 +118,7 @@ export default function MisPedidosPage() {
     try {
       const res = await fetch(`/api/pedidos/${pedidoId}`, { credentials: 'include' });
       if (!res.ok) {
-        alert('No se pudo cargar el detalle del pedido');
+        setMensaje('No se pudo cargar el detalle del pedido');
         return;
       }
 
@@ -125,7 +127,7 @@ export default function MisPedidosPage() {
       setShowModal(true);
     } catch (error) {
       console.error('Error al cargar detalle del pedido:', error);
-      alert('Error al cargar el detalle del pedido');
+      setMensaje('Error al cargar el detalle del pedido');
     }
   };
 
@@ -163,7 +165,7 @@ export default function MisPedidosPage() {
       const data = await res.json().catch(() => null);
 
       if (!res.ok) {
-        alert(data?.error || 'No se pudo enviar la encuesta');
+        setMensaje(data?.error || 'No se pudo enviar la encuesta');
         return;
       }
 
@@ -180,7 +182,7 @@ export default function MisPedidosPage() {
       setShowThankYouModal(true);
     } catch (error) {
       console.error('Error al enviar encuesta:', error);
-      alert('Error al enviar la encuesta');
+      setMensaje('Error al enviar la encuesta');
     } finally {
       setSendingSurvey(false);
     }
@@ -207,17 +209,17 @@ export default function MisPedidosPage() {
             return;
           }
           if (session.id) {
-            window.location.href = `${process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:3000'}/?checkout_session_id=${session.id}&pedido_id=${pedido.id}`;
+            window.location.href = `${process.env.NEXT_PUBLIC_FRONTEND_URL || window.location.origin}/?checkout_session_id=${session.id}&pedido_id=${pedido.id}`;
             return;
           }
         }
 
         const friendly = data?.friendly;
-        const detailMsg = data?.details ? JSON.stringify(data.details) : data?.error || 'Intenta de nuevo.';
-        alert('No se pudo crear la sesión de pago. ' + (friendly || detailMsg));
+        const detailMsg = data?.error || 'Intenta de nuevo.';
+        setMensaje('No se pudo crear la sesión de pago. ' + (friendly || detailMsg));
       } catch (err) {
         console.error('Error creando sesión de Stripe:', err);
-        alert('Error conectando con el servidor de pagos.');
+        setMensaje('Error conectando con el servidor de pagos.');
       } finally {
         setPayModalPedido(null);
       }
@@ -272,6 +274,12 @@ export default function MisPedidosPage() {
             Total: {pedidos.length} {pedidos.length === 1 ? 'pedido' : 'pedidos'}
           </span>
         </div>
+
+        {mensaje && (
+          <div className="mb-6 rounded-2xl border border-rose-600/30 bg-rose-600/10 p-4 text-sm text-rose-200">
+            {mensaje}
+          </div>
+        )}
 
         {pedidos.length === 0 ? (
           <div className="rounded-2xl border border-gray-800 bg-[#161f30] p-12 text-center max-w-md mx-auto shadow-xl">

@@ -48,6 +48,7 @@ export default function AdminPedidosPage() {
   const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [mensaje, setMensaje] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
 
   // Estado para el modal de confirmación
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -107,7 +108,7 @@ export default function AdminPedidosPage() {
     if (nuevoEstado === pedido.estado) return;
 
     if (nuevoEstado === 'entregado' && !pedido.fecha_entrega) {
-      alert('Debe establecer la fecha de entrega antes de marcar el pedido como entregado. Cambie el estado a "Listo" primero.');
+      setMensaje({ tipo: 'error', texto: 'Debe establecer la fecha de entrega antes de marcar el pedido como entregado. Cambie el estado a "Listo" primero.' });
       return;
     }
 
@@ -152,7 +153,7 @@ export default function AdminPedidosPage() {
 
   const confirmarFechaEntrega = () => {
     if (!fechaEntregaInput) {
-      alert('Debe seleccionar una fecha de entrega');
+      setMensaje({ tipo: 'error', texto: 'Debe seleccionar una fecha de entrega' });
       return;
     }
 
@@ -188,11 +189,11 @@ export default function AdminPedidosPage() {
         fetchPedidos();
       } else {
         const error = await res.json().catch(() => null);
-        alert(error?.error || `Error al actualizar el ${confirmAction.type}`);
+        setMensaje({ tipo: 'error', texto: error?.error || `Error al actualizar el ${confirmAction.type}` });
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al conectar con el servidor');
+      setMensaje({ tipo: 'error', texto: 'Error al conectar con el servidor' });
     } finally {
       setShowConfirmModal(false);
       setConfirmAction(null);
@@ -254,6 +255,12 @@ export default function AdminPedidosPage() {
             ← Volver al Panel
           </Link>
         </div>
+
+        {mensaje && (
+          <div className={`mb-6 rounded-xl border p-4 text-sm ${mensaje.tipo === 'ok' ? 'border-green-600 bg-green-900/30 text-green-200' : 'border-red-500 bg-red-900/30 text-red-200'}`}>
+            {mensaje.texto}
+          </div>
+        )}
 
         {error ? (
           <div className="rounded-xl bg-red-900/50 border border-red-500 p-6 text-red-200">

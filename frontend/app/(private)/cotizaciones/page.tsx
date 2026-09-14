@@ -29,6 +29,7 @@ export default function CotizacionesPage() {
   const [showModal, setShowModal] = useState(false);
   const [showPhoneModal, setShowPhoneModal] = useState(false);
   const [mobileActionCotizacion, setMobileActionCotizacion] = useState<Cotizacion | null>(null);
+  const [mensaje, setMensaje] = useState('');
 
   const fetchCotizaciones = async () => {
     try {
@@ -59,7 +60,7 @@ export default function CotizacionesPage() {
     try {
       const res = await fetch(`/api/cotizaciones/${encodeURIComponent(codigo)}`);
       if (!res.ok) {
-        alert('No se pudieron cargar los detalles de la cotización');
+        setMensaje('No se pudieron cargar los detalles de la cotización');
         return;
       }
       const data = await res.json();
@@ -67,7 +68,7 @@ export default function CotizacionesPage() {
       setShowModal(true);
     } catch (error) {
       console.error('Error cargando detalles:', error);
-      alert('Error al cargar detalles');
+      setMensaje('Error al cargar detalles');
     }
   };
 
@@ -111,6 +112,12 @@ export default function CotizacionesPage() {
             Total: {cotizaciones.length} {cotizaciones.length === 1 ? 'cotización' : 'cotizaciones'}
           </span>
         </div>
+
+        {mensaje && (
+          <div className="mb-6 rounded-2xl border border-rose-600/30 bg-rose-600/10 p-4 text-sm text-rose-200">
+            {mensaje}
+          </div>
+        )}
 
         {cotizaciones.length === 0 ? (
           <div className="rounded-2xl border border-gray-800 bg-[#161f30] p-12 text-center max-w-md mx-auto shadow-xl">

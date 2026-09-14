@@ -124,7 +124,7 @@ export async function handler(req: NextRequest) {
   } catch (error) {
     console.error('[API Proxy Error]', error);
     return NextResponse.json(
-      { error: 'Backend error', details: String(error) },
+      { error: 'No se pudo conectar con el servidor. Inténtalo de nuevo.' },
       { status: 502 }
     );
   }
