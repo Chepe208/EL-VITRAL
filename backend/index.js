@@ -1173,6 +1173,15 @@ async function handleRequest(req, res) {
         return sendJSON(res, 400, { error: 'Nombre, email y contraseña son obligatorios' });
       }
 
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return sendJSON(res, 400, { error: 'El formato del correo no es válido' });
+      }
+
+      if (password.length < 6) {
+        return sendJSON(res, 400, { error: 'La contraseña debe tener al menos 6 caracteres' });
+      }
+
       const domain = email.split('@')[1];
       try {
         const mxRecords = await require('dns').promises.resolveMx(domain);

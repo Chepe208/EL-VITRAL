@@ -157,4 +157,87 @@ describe('Registro - POST /api/auth/register', () => {
     expect(res.body.error).toBe('El dominio del correo no existe o no es válido');
     expect(query).not.toHaveBeenCalled();
   });
-});
+  test('rechaza registro si el correo no tiene @', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        nombre: 'Maria Lopez',
+        email: 'correosinseparador.com',
+        password: '123456',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+    expect(dns.promises.resolveMx).not.toHaveBeenCalled();
+    expect(hashPassword).not.toHaveBeenCalled();
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  test('rechaza registro si el correo no tiene dominio o formato válido', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        nombre: 'Maria Lopez',
+        email: 'usuario@',
+        password: '123456',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+    expect(dns.promises.resolveMx).not.toHaveBeenCalled();
+    expect(hashPassword).not.toHaveBeenCalled();
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  test('rechaza registro si la contraseña tiene menos de 6 caracteres', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        nombre: 'Maria Lopez',
+        email: 'maria@test.com',
+        password: '12345',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+    expect(dns.promises.resolveMx).not.toHaveBeenCalled();
+    expect(hashPassword).not.toHaveBeenCalled();
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  test('rechaza registro si el nombre está formado únicamente por espacios', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        nombre: '    ',
+        email: 'maria@test.com',
+        password: '123456',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+    expect(dns.promises.resolveMx).not.toHaveBeenCalled();
+    expect(hashPassword).not.toHaveBeenCalled();
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  test('permite registro con contraseña de exactamente 6 caracteres conservando validación MX', async () => {
+    query
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce({ insertId: 10 });
+
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        nombre: 'Maria Lopez',
+        email: 'maria@test.com',
+        password: 'abcdef',
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.message).toBe('Usuario registrado correctamente');
+    expect(dns.promises.resolveMx).toHaveBeenCalledWith('test.com');
+    expect(hashPassword).toHaveBeenCalledWith('abcdef');
+    expect(query).toHaveBeenCalledTimes(2);
+  });
+});
