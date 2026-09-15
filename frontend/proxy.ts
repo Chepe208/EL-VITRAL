@@ -14,7 +14,9 @@ const PUBLIC_PATHS = [
   '/registro',
   '/olvide-password',
   '/reset-password',
-  '/consulta-cotizacion',
+  '/politica-privacidad',
+  '/politica-cookies',
+  '/terminos-condiciones',
 ]
 
 function isPublic(pathname: string) {

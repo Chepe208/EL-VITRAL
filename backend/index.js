@@ -993,6 +993,21 @@ async function ensureUltimaAgendaColumn() {
   }
 }
 
+async function ensureConsentColumns() {
+  const columns = [
+    ['politica_datos_aceptada', 'BOOLEAN NOT NULL DEFAULT false'],
+    ['politica_datos_aceptada_at', 'TIMESTAMP NULL'],
+    ['terminos_aceptados', 'BOOLEAN NOT NULL DEFAULT false'],
+    ['terminos_aceptados_at', 'TIMESTAMP NULL'],
+  ];
+  for (const [name, definition] of columns) {
+    const result = await query('SHOW COLUMNS FROM usuarios LIKE ?', [name]);
+    if (!Array.isArray(result) || result.length === 0) {
+      await query(`ALTER TABLE usuarios ADD COLUMN ${name} ${definition}`);
+    }
+  }
+}
+
 const TIPOS_CITA_VALIDOS = ['consulta', 'medidas', 'otro'];
 
 const MINUTO_INICIO_JORNADA = 8 * 60;
@@ -1167,9 +1182,17 @@ async function handleRequest(req, res) {
       const password = sanitizeString(body.password);
       const telefono = sanitizeString(body.telefono || '');
       const direccion = sanitizeString(body.direccion || '');
+      const aceptaPoliticaDatos = body.aceptaPoliticaDatos === true;
+      const aceptaTerminos = body.aceptaTerminos === true;
 
       if (!nombre || !email || !password) {
         return sendJSON(res, 400, { error: 'Nombre, email y contraseña son obligatorios' });
+      }
+      if (!aceptaPoliticaDatos || !aceptaTerminos) {
+        return sendJSON(res, 400, { error: 'Debes aceptar la política de tratamiento de datos y los términos y condiciones' });
+      }
+      if (process.env.NODE_ENV !== 'test') {
+        await ensureConsentColumns();
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1198,8 +1221,8 @@ async function handleRequest(req, res) {
       const hashedPassword = await hashPassword(password);
       const newUserId = crypto.randomUUID();
       await query(
-        'INSERT INTO usuarios (id, nombre, email, password, telefono, direccion, rol, aprobado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [newUserId, nombre, email, hashedPassword, telefono || null, direccion || null, 'usuario', true]
+        'INSERT INTO usuarios (id, nombre, email, password, telefono, direccion, rol, aprobado, politica_datos_aceptada, politica_datos_aceptada_at, terminos_aceptados, terminos_aceptados_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, NOW())',
+        [newUserId, nombre, email, hashedPassword, telefono || null, direccion || null, 'usuario', true, true, true]
       );
 
       return sendJSON(res, 201, { message: 'Usuario registrado correctamente' });

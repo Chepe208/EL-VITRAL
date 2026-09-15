@@ -59,6 +59,7 @@ const ReviewsCarousel: React.FC = () => {
           autoplay={{
             delay: 6000,
             disableOnInteraction: false,
+            pauseOnMouseEnter: true,
           }}
           pagination={{
             clickable: true,

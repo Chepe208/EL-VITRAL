@@ -12,7 +12,11 @@ CREATE TABLE usuarios (
     aprobado BOOLEAN DEFAULT false,
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ultimo_acceso TIMESTAMP NULL,
-    activo BOOLEAN DEFAULT true
+    activo BOOLEAN DEFAULT true,
+    politica_datos_aceptada BOOLEAN NOT NULL DEFAULT false,
+    politica_datos_aceptada_at TIMESTAMP NULL,
+    terminos_aceptados BOOLEAN NOT NULL DEFAULT false,
+    terminos_aceptados_at TIMESTAMP NULL
 );
 
 CREATE TABLE productos (

@@ -14,7 +14,7 @@ function Navbar() {
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const mobileButtonRef = useRef<HTMLButtonElement>(null);
   const desktopMenuRef = useRef<HTMLDivElement>(null);
-  const desktopButtonRef = useRef<HTMLDivElement>(null);
+  const desktopButtonRef = useRef<HTMLButtonElement>(null);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -149,32 +149,41 @@ function Navbar() {
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                   Hola, {user.nombre}
                 </span>
-                <div
+                <button
+                  type="button"
                   ref={desktopButtonRef}
                   onClick={() => setDesktopMenuOpen(!desktopMenuOpen)}
+                  aria-expanded={desktopMenuOpen}
+                  aria-controls="desktop-user-menu"
+                  aria-label={user ? 'Abrir menú de usuario' : 'Abrir menú'}
                   className="cursor-pointer p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition"
                 >
                   <span className="material-symbols-outlined text-gray-600 dark:text-gray-300 text-3xl">
                     account_circle
                   </span>
-                </div>
+                </button>
               </div>
             ) : (
-              <div
+              <button
+                type="button"
                 ref={desktopButtonRef}
                 onClick={() => setDesktopMenuOpen(!desktopMenuOpen)}
+                aria-expanded={desktopMenuOpen}
+                aria-controls="desktop-user-menu"
+                aria-label="Abrir menú"
                 className="cursor-pointer p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition"
               >
                 <span className="material-symbols-outlined text-gray-600 dark:text-gray-300 text-3xl">
                   menu
                 </span>
-              </div>
+              </button>
             )}
 
             {/* Desplegable escritorio */}
             {desktopMenuOpen && (
               <div
                 ref={desktopMenuRef}
+                id="desktop-user-menu"
                 className="absolute right-0 top-12 mt-2 w-48 max-w-[calc(100vw-2rem)] bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 border border-gray-200 dark:border-gray-700 z-50"
               >
                 {!user ? (

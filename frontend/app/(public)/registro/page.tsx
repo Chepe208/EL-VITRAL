@@ -31,6 +31,8 @@ export default function RegistroPage() {
   });
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [aceptaPoliticaDatos, setAceptaPoliticaDatos] = useState(false);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
   const [touched, setTouched] = useState({
     nombre: false,
@@ -43,6 +45,10 @@ export default function RegistroPage() {
   const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
     setErrors(prev => ({ ...prev, general: '' }));
     setSuccess('');
+    if (!aceptaPoliticaDatos || !aceptaTerminos) {
+      setErrors(prev => ({ ...prev, general: 'Debes aceptar la política de tratamiento de datos y los términos y condiciones.' }));
+      return;
+    }
     setLoading(true);
 
     try {
@@ -118,7 +124,7 @@ export default function RegistroPage() {
       general: '',
     });
 
-    return !nombreErr && !emailErr && !passwordErr && !telefonoErr && !direccionErr;
+    return !nombreErr && !emailErr && !passwordErr && !telefonoErr && !direccionErr && aceptaPoliticaDatos && aceptaTerminos;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,6 +204,8 @@ export default function RegistroPage() {
       password: formData.password.trim(),
       telefono: formData.telefono.trim(),
       direccion: formData.direccion.trim(),
+      aceptaPoliticaDatos,
+      aceptaTerminos,
     };
 
     try {
@@ -255,11 +263,12 @@ export default function RegistroPage() {
 
             {/* Nombre */}
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1">
+              <label htmlFor="nombre" className="block text-xs font-semibold text-gray-300 mb-1">
                 Nombre completo *
               </label>
               <input
                 name="nombre"
+                id="nombre"
                 type="text"
                 value={formData.nombre}
                 onChange={handleChange}
@@ -276,11 +285,12 @@ export default function RegistroPage() {
 
             {/* Email */}
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1">
+              <label htmlFor="email" className="block text-xs font-semibold text-gray-300 mb-1">
                 Correo electrónico *
               </label>
               <input
                 name="email"
+                id="email"
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
@@ -297,12 +307,13 @@ export default function RegistroPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1">
+              <label htmlFor="password" className="block text-xs font-semibold text-gray-300 mb-1">
                 Contraseña *
               </label>
               <div className="relative">
                 <input
                   name="password"
+                  id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={handleChange}
@@ -340,11 +351,12 @@ export default function RegistroPage() {
 
             {/* Teléfono */}
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1">
+              <label htmlFor="telefono" className="block text-xs font-semibold text-gray-300 mb-1">
                 Teléfono <span className="text-gray-500 font-normal">(opcional)</span>
               </label>
               <input
                 name="telefono"
+                id="telefono"
                 type="tel"
                 value={formData.telefono}
                 onChange={handleChange}
@@ -361,11 +373,12 @@ export default function RegistroPage() {
 
             {/* Dirección */}
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1">
+              <label htmlFor="direccion" className="block text-xs font-semibold text-gray-300 mb-1">
                 Dirección *
               </label>
               <input
                 name="direccion"
+                id="direccion"
                 type="text"
                 value={formData.direccion}
                 onChange={handleChange}
@@ -378,6 +391,37 @@ export default function RegistroPage() {
               {touched.direccion && errors.direccion && (
                 <p className="mt-1 text-xs text-rose-400">{errors.direccion}</p>
               )}
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-gray-700/80 bg-gray-900/40 p-4 text-xs text-gray-300">
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={aceptaPoliticaDatos}
+                  onChange={(e) => setAceptaPoliticaDatos(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-cyan-500"
+                />
+                <span>
+                  Autorizo el tratamiento de mis datos personales conforme a la{' '}
+                  <Link href="/politica-privacidad" target="_blank" className="text-cyan-400 hover:text-cyan-300 underline">
+                    Política de privacidad y tratamiento de datos
+                  </Link>.
+                </span>
+              </label>
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={aceptaTerminos}
+                  onChange={(e) => setAceptaTerminos(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 accent-cyan-500"
+                />
+                <span>
+                  Acepto los{' '}
+                  <Link href="/terminos-condiciones" target="_blank" className="text-cyan-400 hover:text-cyan-300 underline">
+                    términos y condiciones
+                  </Link>.
+                </span>
+              </label>
             </div>
 
             <button

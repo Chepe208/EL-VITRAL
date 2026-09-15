@@ -45,6 +45,8 @@ describe('Registro - POST /api/auth/register', () => {
         password: '123456',
         telefono: '3001234567',
         direccion: 'Calle 1',
+        aceptaPoliticaDatos: true,
+        aceptaTerminos: true,
       });
 
     expect(res.status).toBe(201);
@@ -75,6 +77,8 @@ describe('Registro - POST /api/auth/register', () => {
         nombre: 'Maria Lopez',
         email: 'maria@test.com',
         password: '123456',
+        aceptaPoliticaDatos: true,
+        aceptaTerminos: true,
       });
 
     expect(res.status).toBe(409);
@@ -92,6 +96,8 @@ describe('Registro - POST /api/auth/register', () => {
         password: '123456',
         telefono: '3001234567',
         direccion: 'Calle 1',
+        aceptaPoliticaDatos: true,
+        aceptaTerminos: true,
       });
 
     expect(res.status).toBe(409);
@@ -117,6 +123,8 @@ describe('Registro - POST /api/auth/register', () => {
         password: '123456',
         telefono: '3001234567',
         direccion: 'Calle 1',
+        aceptaPoliticaDatos: true,
+        aceptaTerminos: true,
       });
 
     expect(res.status).toBe(201);
@@ -135,6 +143,8 @@ describe('Registro - POST /api/auth/register', () => {
         nombre: 'Maria Lopez',
         email: 'maria@sinmx.com',
         password: '123456',
+        aceptaPoliticaDatos: true,
+        aceptaTerminos: true,
       });
 
     expect(res.status).toBe(400);
@@ -151,6 +161,8 @@ describe('Registro - POST /api/auth/register', () => {
         nombre: 'Maria Lopez',
         email: 'maria@invalido.com',
         password: '123456',
+        aceptaPoliticaDatos: true,
+        aceptaTerminos: true,
       });
 
     expect(res.status).toBe(400);
@@ -232,6 +244,8 @@ describe('Registro - POST /api/auth/register', () => {
         nombre: 'Maria Lopez',
         email: 'maria@test.com',
         password: 'abcdef',
+        aceptaPoliticaDatos: true,
+        aceptaTerminos: true,
       });
 
     expect(res.status).toBe(201);

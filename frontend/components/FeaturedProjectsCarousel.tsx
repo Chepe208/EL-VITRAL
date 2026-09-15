@@ -41,7 +41,7 @@ export default function FeaturedProjectsCarousel() {
             spaceBetween={32}
             slidesPerView={1}
             breakpoints={{ 768: { slidesPerView: 2 }, 1280: { slidesPerView: 3 } }}
-            autoplay={{ delay: 5000, disableOnInteraction: false }}
+            autoplay={{ delay: 5000, disableOnInteraction: false, pauseOnMouseEnter: true }}
             pagination={{ clickable: true }}
             className="pb-12"
           >

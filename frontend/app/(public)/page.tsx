@@ -1,24 +1,8 @@
 'use client';
 import React, { useState } from 'react';
 import Image from 'next/image';
-import dynamic from 'next/dynamic';
-import CalculadoraPrecios from '@/components/CalculadoraPrecios';
+import LazyHomeSections from '@/components/LazyHomeSections';
 import { useRouter } from 'next/navigation';
-
-const FeaturedProjectsCarousel = dynamic(() => import('@/components/FeaturedProjectsCarousel'), {
-  loading: () => <div className="py-20 bg-[#0d131f] flex items-center justify-center text-gray-400 text-sm min-h-[200px]">Cargando proyectos...</div>,
-  ssr: false,
-});
-
-const ReviewsCarousel = dynamic(() => import('@/components/ReviewsCarousel'), {
-  loading: () => <div className="py-20 bg-white dark:bg-gray-800 flex items-center justify-center text-gray-400 text-sm min-h-[200px]">Cargando reseñas...</div>,
-  ssr: false,
-});
-
-const LocationSection = dynamic(() => import('@/components/LocationSection'), {
-  loading: () => <div className="py-20 bg-gray-50 dark:bg-gray-900 flex items-center justify-center text-gray-400 text-sm min-h-[200px]">Cargando ubicación...</div>,
-  ssr: false,
-});
 
 export default function LandingPage() {
   const router = useRouter();
@@ -47,7 +31,7 @@ export default function LandingPage() {
   return (
     <div className="bg-[#0d131f] text-gray-100 min-h-screen">
       {/* Hero Section */}
-      <div className="relative h-[650px] flex items-center justify-center border-b border-gray-800">
+      <div className="relative min-h-[560px] sm:min-h-[620px] lg:h-[650px] flex items-center justify-center border-b border-gray-800 py-16 sm:py-20">
         <div className="absolute inset-0 w-full h-full">
           <Image
             src="https://forbes.es/wp-content/uploads/2022/03/California-2.jpg"
@@ -64,7 +48,7 @@ export default function LandingPage() {
           <span className="text-xs font-bold text-cyan-400 tracking-wider uppercase bg-cyan-500/10 border border-cyan-500/30 px-3 py-1 rounded-full inline-block mb-4">
             Innovación en Vidriería
           </span>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-8 tracking-tight drop-shadow-md">
+          <h1 className="text-[clamp(2rem,7vw,3.75rem)] leading-tight font-extrabold text-white mb-8 tracking-tight drop-shadow-md">
             ¿Buscando nuevas <span className="text-cyan-400">instalaciones de vidrio</span>?
           </h1>
 
@@ -120,12 +104,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      <FeaturedProjectsCarousel />
-
-      {/* Reseñas y Ubicación */}
-      <ReviewsCarousel />
-      <CalculadoraPrecios />
-      <LocationSection />
+      <LazyHomeSections />
     </div>
   );
 }

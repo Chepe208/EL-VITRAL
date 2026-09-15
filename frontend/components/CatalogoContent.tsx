@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from 'next/image';
 import Link from "next/link";
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -33,12 +33,39 @@ export default function CatalogoContent() {
     const filtro = tipo === 'templado' || tipo === 'laminado' ? 'vidrio' : (tipo || 'todos');
 
     useEffect(() => {
-        fetch('/api/productos')
-            .then(res => res.json())
+        const controller = new AbortController();
+        const cached = window.sessionStorage.getItem('catalogo-productos');
+        let cacheTimer: ReturnType<typeof setTimeout> | undefined;
+        if (cached) {
+            try {
+                const cachedProducts = JSON.parse(cached) as Producto[];
+                cacheTimer = setTimeout(() => {
+                    setProductos(cachedProducts);
+                    setLoading(false);
+                }, 0);
+            } catch {
+                window.sessionStorage.removeItem('catalogo-productos');
+            }
+        }
+
+        fetch('/api/productos/publicos', { signal: controller.signal })
+            .then(res => {
+                if (!res.ok) throw new Error('No se pudieron cargar los productos');
+                return res.json();
+            })
             .then(data => {
                 setProductos(data);
-                setLoading(false);
-            });
+                window.sessionStorage.setItem('catalogo-productos', JSON.stringify(data));
+            })
+            .catch(error => {
+                if (error.name !== 'AbortError') setLoading(false);
+            })
+            .finally(() => setLoading(false));
+
+        return () => {
+            controller.abort();
+            if (cacheTimer) clearTimeout(cacheTimer);
+        };
     }, []);
 
     const setFiltro = (nuevoFiltro: string) => {
@@ -54,10 +81,10 @@ export default function CatalogoContent() {
         router.push(`/catalogo?${params.toString()}`);
     };
 
-    const productosFiltrados = productos.filter(producto => {
+    const productosFiltrados = useMemo(() => productos.filter(producto => {
         if (filtro === 'todos') return true;
         return producto.tipo.toLowerCase() === filtro.toLowerCase();
-    });
+    }), [filtro, productos]);
 
     // Agrupar por tipo para mostrar el contador
     const contarPorTipo = (tipo: string) => {
@@ -139,9 +166,10 @@ export default function CatalogoContent() {
                                     <Image
                                         src={producto.imagen_url}
                                         alt={producto.nombre}
-                                        width={400}
-                                        height={300}
-                                        className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
+                                        fill
+                                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                                        loading="lazy"
+                                        className="object-cover transition-transform duration-500 group-hover:scale-105"
                                     />
                                 ) : (
                                     <div className="flex flex-col items-center justify-center h-full text-gray-500">

@@ -65,6 +65,15 @@ function Footer() {
           </div>
 
           <div>
+            <h4 className="text-white font-semibold mb-4">Información legal</h4>
+            <ul className="space-y-2">
+              <li><Link href="/politica-privacidad" className={linkClass}>Privacidad y datos personales</Link></li>
+              <li><Link href="/politica-cookies" className={linkClass}>Política de cookies</Link></li>
+              <li><Link href="/terminos-condiciones" className={linkClass}>Términos y condiciones</Link></li>
+            </ul>
+          </div>
+
+          <div>
             <h4 className="text-white font-semibold mb-4">Servicios</h4>
             <ul className="space-y-2">
               <li>

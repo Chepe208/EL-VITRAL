@@ -82,27 +82,27 @@ function AgendaWidget() {
     return [];
   }, []);
 
-  useEffect(() => {
+  const cargarAgenda = useCallback(async () => {
     if (!user) return;
-    let cancelled = false;
-    fetch('/api/agenda/citas', { credentials: 'include' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!cancelled && data) {
-          setCitas(data.sort((a: Cita, b: Cita) => new Date(a.fecha_cita).getTime() - new Date(b.fecha_cita).getTime()));
-        }
-      })
-      .catch(() => {});
-    fetchDiasDisponibles().then((dias) => {
-      if (!cancelled) {
-        setDiasDisponibles(dias);
-        setFormData((prev) => ({ ...prev, fecha_cita: prev.fecha_cita || (dias[0] || '') }));
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [user, fetchDiasDisponibles]);
+    const [citasResponse, dias] = await Promise.all([
+      fetch('/api/agenda/citas', { credentials: 'include' }),
+      fetchDiasDisponibles(),
+    ]);
+    if (citasResponse.ok) {
+      const data = await citasResponse.json();
+      setCitas(data.sort((a: Cita, b: Cita) => new Date(a.fecha_cita).getTime() - new Date(b.fecha_cita).getTime()));
+    }
+    setDiasDisponibles(dias);
+    setFormData((prev) => ({ ...prev, fecha_cita: prev.fecha_cita || (dias[0] || '') }));
+  }, [fetchDiasDisponibles, user]);
+
+  useEffect(() => {
+    if (!user || !isOpen) return;
+    const timer = setTimeout(() => {
+      void cargarAgenda();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [cargarAgenda, isOpen, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

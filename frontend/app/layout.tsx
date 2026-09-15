@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 import './globals.css'
 import Footer from '@/components/Footer'
 import NavBar from '@/components/NavBar'
-import AgendaWidget from '@/components/AgendaWidget'
+import DeferredAgendaWidget from '@/components/DeferredAgendaWidget'
 import { AuthProvider } from '@/components/AuthProvider'
+import LegalNotice from '@/components/LegalNotice'
 
 export const metadata: Metadata = {
   title: 'El Vitral',
@@ -31,7 +32,8 @@ export default function RootLayout({
             <main className="flex-1 w-full">{children}</main>
             <Footer />
           </div>
-          <AgendaWidget />
+          <DeferredAgendaWidget />
+          <LegalNotice />
         </AuthProvider>
       </body>
     </html>
