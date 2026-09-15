@@ -132,4 +132,51 @@ describe('Login - POST /api/auth/login', () => {
     expect(generateAccessToken).not.toHaveBeenCalled();
     expect(generateRefreshToken).not.toHaveBeenCalled();
   });
+
+  test('maneja JSON inválido de forma segura sin registrar información sensible', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const secretPassword = 'super-secret-password-12345';
+    const secretCookie = 'token=secret-session-cookie';
+    const secretAuth = 'Bearer secret-jwt-token-xyz';
+
+    const res = await request(app)
+      .post('/api/auth/login')
+      .set('Content-Type', 'application/json')
+      .set('Cookie', secretCookie)
+      .set('Authorization', secretAuth)
+      .send(`{"email": "juan@test.com", "password": "${secretPassword}", broken`);
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Formato JSON inválido');
+
+    expect(consoleErrorSpy).toHaveBeenCalled();
+
+    for (const callArgs of consoleErrorSpy.mock.calls) {
+      const loggedContent = callArgs
+        .map((arg) => (typeof arg === 'object' && arg !== null ? JSON.stringify(arg) : String(arg)))
+        .join(' ');
+
+      expect(loggedContent).not.toContain(secretPassword);
+      expect(loggedContent).not.toContain(secretCookie);
+      expect(loggedContent).not.toContain(secretAuth);
+      expect(loggedContent).not.toContain('broken');
+    }
+
+    const invalidJsonCall = consoleErrorSpy.mock.calls.find((call) =>
+      call.some((arg) => typeof arg === 'string' && arg.includes('Invalid JSON body received'))
+    );
+    expect(invalidJsonCall).toBeDefined();
+
+    const safeMeta = invalidJsonCall.find((arg) => typeof arg === 'object' && arg !== null);
+    expect(safeMeta).toMatchObject({
+      method: 'POST',
+      url: '/api/auth/login',
+      contentType: 'application/json',
+      error: 'SyntaxError',
+    });
+    expect(safeMeta.contentLength).toBeGreaterThan(0);
+
+    consoleErrorSpy.mockRestore();
+  });
 });

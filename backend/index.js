@@ -894,9 +894,16 @@ async function parseBody(req) {
       try {
         resolve(JSON.parse(body));
       } catch (error) {
-        console.error('Invalid JSON body received. Raw body:', body);
-        console.error('Request headers:', req.headers);
-        reject(new Error('Invalid JSON body'));
+        console.error('Invalid JSON body received:', {
+          method: req.method,
+          url: req.url ? req.url.split('?')[0] : '',
+          contentType: (req.headers && req.headers['content-type']) || null,
+          contentLength: body ? Buffer.byteLength(body, 'utf8') : 0,
+          error: error.name || 'SyntaxError',
+        });
+        const err = new Error('Invalid JSON body');
+        err.status = 400;
+        reject(err);
       }
     });
 
@@ -2885,6 +2892,9 @@ async function handleRequest(req, res) {
 
     return sendJSON(res, 404, { error: 'Ruta no encontrada' });
   } catch (error) {
+    if (error.message === 'Invalid JSON body' || error.status === 400) {
+      return sendJSON(res, 400, { error: 'Formato JSON inválido' });
+    }
     console.error('Request error:', error);
     sendJSON(res, 500, { error: 'Error interno del servidor' });
   }
