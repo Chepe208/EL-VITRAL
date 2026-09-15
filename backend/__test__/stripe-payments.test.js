@@ -55,7 +55,33 @@ describe('Pagos Stripe en COP', () => {
     const body = new URLSearchParams(global.fetch.mock.calls[0][1].body);
     expect(body.get('line_items[0][price_data][currency]')).toBe('cop');
     expect(body.get('line_items[0][price_data][unit_amount]')).toBe('1000000');
+    expect(global.fetch.mock.calls[0][1].headers['Idempotency-Key']).toMatch(/^pedido-31-pendiente-pagado-/);
     expect(response.body.amount_cop).toBe(10000);
+  });
+
+  test('crea la sesión de anticipo por el 50% del pedido', async () => {
+    query.mockResolvedValueOnce([{
+      id: 31,
+      usuario_id: 'user-1',
+      total: 10000,
+      pago: 'pendiente',
+      estado: 'pendiente',
+    }]);
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 'cs_test_anticipo', url: 'https://checkout.stripe.test/anticipo' }),
+    });
+
+    const response = await request(app)
+      .post('/api/pedidos/31/create-checkout-session')
+      .send({ tipo_pago: 'anticipo' });
+
+    expect(response.status).toBe(200);
+    const body = new URLSearchParams(global.fetch.mock.calls[0][1].body);
+    expect(body.get('line_items[0][price_data][unit_amount]')).toBe('500000');
+    expect(body.get('metadata[tipo_pago]')).toBe('anticipo');
+    expect(global.fetch.mock.calls[0][1].headers['Idempotency-Key']).toMatch(/^pedido-31-pendiente-anticipo-/);
+    expect(response.body.amount_cop).toBe(5000);
   });
 
   test('rechaza cotizaciones por debajo de $10.000 COP', async () => {
@@ -121,6 +147,43 @@ describe('Pagos Stripe en COP', () => {
       31,
       10000,
       false
+    );
+  });
+
+  test('confirma un anticipo y deja el pedido en estado de anticipo', async () => {
+    const pedido = {
+      id: 31,
+      usuario_id: 'user-1',
+      total: 10000,
+      pago: 'pendiente',
+      estado: 'pendiente',
+    };
+    query
+      .mockResolvedValueOnce([pedido])
+      .mockResolvedValueOnce({ affectedRows: 1 })
+      .mockResolvedValueOnce([{ email: 'admin@example.com' }]);
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        payment_status: 'paid',
+        currency: 'cop',
+        amount_total: 500000,
+        metadata: { pedido_id: '31', tipo_pago: 'anticipo', pago_previo: 'pendiente' },
+        payment_intent: { status: 'succeeded', amount: 500000 },
+      }),
+    });
+
+    const response = await request(app)
+      .post('/api/pedidos/31/pago-completado')
+      .send({ stripe_session_id: 'cs_test_anticipo', tipo_pago: 'anticipo' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ pago: 'anticipo', estado: 'en_proceso' });
+    expect(notifyPaymentReceived).toHaveBeenCalledWith(
+      ['admin@example.com'],
+      31,
+      5000,
+      true
     );
   });
 

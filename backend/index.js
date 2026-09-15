@@ -51,6 +51,13 @@ function toStripeCopAmount(amountInCop) {
   return Math.round(Number(amountInCop) * COP_MINOR_UNIT_MULTIPLIER);
 }
 
+function getStripeSecret() {
+  const secret = String(process.env.STRIPE_SECRET_KEY || '')
+    .replace(/\\n/g, '')
+    .trim();
+  return secret || null;
+}
+
 function getPaymentAmountInCop(total, currentPaymentStatus, paymentType) {
   const normalizedTotal = Math.round(Number(total));
   if (!Number.isFinite(normalizedTotal) || normalizedTotal < MINIMUM_QUOTE_TOTAL_COP) {
@@ -2381,7 +2388,7 @@ async function handleRequest(req, res) {
       }
       const unitAmount = toStripeCopAmount(amountInCop);
 
-      const stripeSecret = process.env.STRIPE_SECRET_KEY;
+      const stripeSecret = getStripeSecret();
       if (!stripeSecret) {
         return sendJSON(res, 500, { error: 'STRIPE_SECRET_KEY no configurada en el servidor' });
       }
@@ -2408,7 +2415,8 @@ async function handleRequest(req, res) {
           headers: {
             'Authorization': `Bearer ${stripeSecret}`,
             'Content-Type': 'application/x-www-form-urlencoded',
-            'Idempotency-Key': `pedido-${pedidoId}-${pedido.pago || 'pendiente'}-${tipoPago}`,
+            // Cada intento debe poder reintentarse después de un error anterior de Stripe.
+            'Idempotency-Key': `pedido-${pedidoId}-${pedido.pago || 'pendiente'}-${tipoPago}-${crypto.randomUUID()}`,
           },
           body: params.toString()
         });
@@ -2431,6 +2439,11 @@ async function handleRequest(req, res) {
               error: 'No se pudo crear la sesión de Stripe',
               status: stripeRes.status,
               friendly: `El monto de $${amountInCop.toLocaleString('es-CO')} COP es demasiado pequeño para procesar con Stripe.`,
+            });
+          }
+          if (data && data.error && data.error.type === 'authentication_error') {
+            return sendJSON(res, 500, {
+              error: 'La configuración de Stripe no es válida en el servidor',
             });
           }
           return sendJSON(res, 400, { error: 'No se pudo crear la sesión de Stripe', status: stripeRes.status });
@@ -2475,7 +2488,7 @@ async function handleRequest(req, res) {
       }
 
       try {
-        const stripeSecret = process.env.STRIPE_SECRET_KEY;
+        const stripeSecret = getStripeSecret();
         if (!stripeSecret) {
           return sendJSON(res, 500, { error: 'STRIPE_SECRET_KEY no configurada en el servidor' });
         }
