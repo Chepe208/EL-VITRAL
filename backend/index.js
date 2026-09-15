@@ -2410,7 +2410,7 @@ async function handleRequest(req, res) {
               friendly: `El monto de $${amountInCop.toLocaleString('es-CO')} COP es demasiado pequeño para procesar con Stripe.`,
             });
           }
-          return sendJSON(res, 400, { error: data?.error?.message || 'No se pudo crear la sesión de Stripe', status: stripeRes.status });
+          return sendJSON(res, 400, { error: 'No se pudo crear la sesión de Stripe', status: stripeRes.status });
         }
 
         return sendJSON(res, 200, { message: 'Stripe session creada', session: data, amount_cop: amountInCop });
