@@ -1,15 +1,9 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import Footer from '@/components/Footer'
 import NavBar from '@/components/NavBar'
 import AgendaWidget from '@/components/AgendaWidget'
 import { AuthProvider } from '@/components/AuthProvider'
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-})
 
 export const metadata: Metadata = {
   title: 'El Vitral',
@@ -30,7 +24,7 @@ export default function RootLayout({
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" />
       </head>
-      <body className={`${inter.variable} ${inter.className} overflow-x-hidden`}>
+      <body className="font-sans overflow-x-hidden">
         <AuthProvider>
           <NavBar />
           <div className="min-h-screen flex flex-col w-full">
