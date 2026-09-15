@@ -1,4 +1,11 @@
 const request = require('supertest');
+const dns = require('dns');
+
+jest.mock('dns', () => ({
+  promises: {
+    resolveMx: jest.fn(),
+  },
+}));
 
 jest.mock('../lib/db.js', () => ({
   query: jest.fn(),
@@ -22,6 +29,7 @@ const app = require('../index.js');
 describe('Registro - POST /api/auth/register', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    dns.promises.resolveMx.mockResolvedValue([{ exchange: 'mail.test.com', priority: 10 }]);
   });
 
   test('registra un usuario nuevo correctamente', async () => {
@@ -117,4 +125,36 @@ describe('Registro - POST /api/auth/register', () => {
     expect(sanitizeEmail).toHaveBeenCalledWith('   MARIA@TEST.COM   ');
     expect(hashPassword).toHaveBeenCalledWith('123456');
   });
-});
+
+  test('rechaza registro si el dominio no tiene registros MX', async () => {
+    dns.promises.resolveMx.mockResolvedValueOnce([]);
+
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        nombre: 'Maria Lopez',
+        email: 'maria@sinmx.com',
+        password: '123456',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('El dominio del correo no es válido (no recibe correos)');
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  test('rechaza registro si la resolución DNS del dominio arroja error', async () => {
+    dns.promises.resolveMx.mockRejectedValueOnce(new Error('queryMx ENOTFOUND'));
+
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        nombre: 'Maria Lopez',
+        email: 'maria@invalido.com',
+        password: '123456',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('El dominio del correo no existe o no es válido');
+    expect(query).not.toHaveBeenCalled();
+  });
+});
