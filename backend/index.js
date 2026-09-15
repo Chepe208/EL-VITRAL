@@ -1484,12 +1484,22 @@ async function handleRequest(req, res) {
         return sendJSON(res, 401, { error: 'No autorizado' });
       }
 
-      const rows = await query('SELECT id, nombre, email, telefono, direccion, rol, aprobado, ultimo_acceso FROM usuarios WHERE id = ?', [userData.id]);
+      const rows = await query('SELECT id, nombre, email, telefono, direccion, rol, aprobado, activo, ultimo_acceso FROM usuarios WHERE id = ?', [userData.id]);
       if (!Array.isArray(rows) || rows.length === 0) {
         return sendJSON(res, 401, { error: 'Usuario no encontrado' });
       }
 
-      return sendJSON(res, 200, rows[0]);
+      const user = rows[0];
+      if (!user.activo) {
+        return sendJSON(res, 403, { error: 'Tu cuenta está desactivada' });
+      }
+      if (!user.aprobado) {
+        return sendJSON(res, 403, { error: 'Cuenta en espera de aprobación' });
+      }
+
+      // No exponer activo en la respuesta (dato interno)
+      const { activo: _activo, ...safeUser } = user;
+      return sendJSON(res, 200, safeUser);
     }
 
     // ===== UPDATE ME =====
