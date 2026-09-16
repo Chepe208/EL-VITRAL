@@ -68,6 +68,20 @@ describe('Registro - POST /api/auth/register', () => {
     expect(query).not.toHaveBeenCalled();
   });
 
+  test('rechaza registro si no se aceptan las políticas legales', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({
+        nombre: 'Maria Lopez',
+        email: 'maria@test.com',
+        password: '123456',
+      });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Debes aceptar la política de tratamiento de datos y los términos y condiciones');
+    expect(query).not.toHaveBeenCalled();
+  });
+
   test('rechaza registro si el correo ya existe', async () => {
     query.mockResolvedValueOnce([{ id: 1 }]);
 
@@ -82,7 +96,8 @@ describe('Registro - POST /api/auth/register', () => {
       });
 
     expect(res.status).toBe(409);
-    expect(res.body.error).toBeDefined();
+    expect(res.body.error).toBe('El correo ya está registrado');
+    expect(dns.promises.resolveMx).not.toHaveBeenCalled();
   });
 
   test('rechaza registro cuando el correo contiene espacios y ya existe después de sanitizarse', async () => {
@@ -149,7 +164,10 @@ describe('Registro - POST /api/auth/register', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('El dominio del correo no es válido (no recibe correos)');
-    expect(query).not.toHaveBeenCalled();
+    expect(query).toHaveBeenCalledWith(
+      'SELECT id FROM usuarios WHERE email = ?',
+      ['maria@sinmx.com']
+    );
   });
 
   test('rechaza registro si la resolución DNS del dominio arroja error', async () => {
@@ -167,7 +185,10 @@ describe('Registro - POST /api/auth/register', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('El dominio del correo no existe o no es válido');
-    expect(query).not.toHaveBeenCalled();
+    expect(query).toHaveBeenCalledWith(
+      'SELECT id FROM usuarios WHERE email = ?',
+      ['maria@invalido.com']
+    );
   });
   test('rechaza registro si el correo no tiene @', async () => {
     const res = await request(app)

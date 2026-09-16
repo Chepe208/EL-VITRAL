@@ -35,9 +35,10 @@ const {
   createSession,
   getSession,
   deleteSession,
+  deleteSessionsForUser,
 } = require('./lib/auth.js');
 const { createPasswordResetToken, sendPasswordResetEmail } = require('./lib/email.js');
-const { notifyOrderCreated, notifyOrderStateChange, notifyAppointment, notifyStockMovement, notifyPaymentReceived } = require('./lib/notifications.js');
+const { notifyOrderCreated, notifyOrderStateChange, notifyAppointment, notifyStockMovement, notifyPaymentReceived, notifyQuoteRejected } = require('./lib/notifications.js');
 const { checkRate, rateLimitError, getClientIp } = require('./lib/rateLimit.js');
 
 const port = process.env.PORT || 4000;
@@ -49,6 +50,22 @@ const MINIMUM_QUOTE_TOTAL_COP = 10000;
 
 function toStripeCopAmount(amountInCop) {
   return Math.round(Number(amountInCop) * COP_MINOR_UNIT_MULTIPLIER);
+}
+
+async function ensureSurveyTable() {
+  await query(
+    'CREATE TABLE IF NOT EXISTS encuestas_satisfaccion (' +
+      'id INT PRIMARY KEY AUTO_INCREMENT, ' +
+      'pedido_id INT NOT NULL, ' +
+      'usuario_id VARCHAR(36) NOT NULL, ' +
+      'calificacion TINYINT NOT NULL, ' +
+      'comentario TEXT, ' +
+      'fecha_respuesta TIMESTAMP DEFAULT CURRENT_TIMESTAMP, ' +
+      'UNIQUE KEY unique_encuesta_pedido (pedido_id), ' +
+      'FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE, ' +
+      'FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE' +
+      ')'
+  );
 }
 
 function getStripeSecret() {
@@ -1008,7 +1025,10 @@ async function ensureConsentColumns() {
     ['terminos_aceptados_at', 'TIMESTAMP NULL'],
   ];
   for (const [name, definition] of columns) {
-    const result = await query('SHOW COLUMNS FROM usuarios LIKE ?', [name]);
+    const result = await query(
+      'SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?',
+      ['usuarios', name]
+    );
     if (!Array.isArray(result) || result.length === 0) {
       await query(`ALTER TABLE usuarios ADD COLUMN ${name} ${definition}`);
     }
@@ -1211,6 +1231,11 @@ async function handleRequest(req, res) {
         return sendJSON(res, 400, { error: 'La contraseña debe tener al menos 6 caracteres' });
       }
 
+      const existing = await query('SELECT id FROM usuarios WHERE email = ?', [email]);
+      if (Array.isArray(existing) && existing.length > 0) {
+        return sendJSON(res, 409, { error: 'El correo ya está registrado' });
+      }
+
       const domain = email.split('@')[1];
       try {
         const mxRecords = await require('dns').promises.resolveMx(domain);
@@ -1220,11 +1245,6 @@ async function handleRequest(req, res) {
       } catch (err) {
         return sendJSON(res, 400, { error: 'El dominio del correo no existe o no es válido' });
       }
-      const existing = await query('SELECT id FROM usuarios WHERE email = ?', [email]);
-      if (Array.isArray(existing) && existing.length > 0) {
-        return sendJSON(res, 409, { error: 'El correo ya está registrado' });
-      }
-
       const hashedPassword = await hashPassword(password);
       const newUserId = crypto.randomUUID();
       await query(
@@ -1263,7 +1283,7 @@ async function handleRequest(req, res) {
       }
 
       if (!user.activo) {
-        return sendJSON(res, 403, { error: 'Cuenta inactiva' });
+        return sendJSON(res, 403, { error: 'Tu cuenta está desactivada, llámanos al 3137928483 para reactivarla' });
       }
 
       if (!user.aprobado) {
@@ -1334,7 +1354,7 @@ async function handleRequest(req, res) {
         user = userRows[0];
 
         if (!user.activo) {
-          return sendJSON(res, 403, { error: 'Cuenta inactiva' });
+          return sendJSON(res, 403, { error: 'Tu cuenta está desactivada, llámanos al 3137928483 para reactivarla' });
         }
         if (!user.aprobado) {
           return sendJSON(res, 403, { error: 'Cuenta en espera de aprobación' });
@@ -1473,7 +1493,7 @@ async function handleRequest(req, res) {
       }
 
       const user = userRows[0];
-      if (!user.activo) return sendJSON(res, 403, { error: 'Cuenta inactiva' });
+      if (!user.activo) return sendJSON(res, 403, { error: 'Tu cuenta está desactivada, llámanos al 3137928483 para reactivarla' });
       if (!user.aprobado) return sendJSON(res, 403, { error: 'Cuenta en espera de aprobación' });
 
       deleteSession(cookies.sid);
@@ -1875,6 +1895,33 @@ async function handleRequest(req, res) {
       return sendJSON(res, 200, Array.isArray(cotizaciones) ? cotizaciones.map(formatNumericRow) : []);
     }
 
+    if (parts[0] === 'api' && parts[1] === 'admin' && parts[2] === 'cotizaciones' && parts[3] && method === 'PATCH') {
+      const adminCheck = requireAdmin(req);
+      if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
+      const id = Number(parts[3]);
+      if (Number.isNaN(id)) return sendJSON(res, 400, { error: 'ID inválido' });
+
+      const rows = await query(
+        'SELECT id, estado, codigo_unico, nombre_cliente, email_cliente FROM cotizaciones WHERE id = ?',
+        [id]
+      );
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return sendJSON(res, 404, { error: 'Cotización no encontrada' });
+      }
+      if (rows[0].estado === 'convertida') {
+        return sendJSON(res, 409, { error: 'Una cotización convertida no puede ser rechazada' });
+      }
+
+      const result = await query('UPDATE cotizaciones SET estado = ? WHERE id = ?', ['rechazada', id]);
+      if (!result || result.affectedRows === 0) {
+        return sendJSON(res, 404, { error: 'Cotización no encontrada' });
+      }
+      if (typeof notifyQuoteRejected === 'function') {
+        await notifyQuoteRejected(rows[0].email_cliente, rows[0].codigo_unico, rows[0].nombre_cliente);
+      }
+      return sendJSON(res, 200, { message: 'Cotización rechazada', estado: 'rechazada' });
+    }
+
     if (parts[0] === 'api' && parts[1] === 'admin' && parts[2] === 'cotizaciones' && parts[3] && parts[4] === 'pdf' && method === 'GET') {
       const adminCheck = requireAdmin(req);
       if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
@@ -2046,7 +2093,7 @@ async function handleRequest(req, res) {
     if (pathname === '/api/admin/usuarios' && method === 'GET') {
       const adminCheck = requireAdmin(req);
       if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
-      const usuarios = await query('SELECT id, nombre, email, telefono, direccion, rol, aprobado, ultimo_acceso FROM usuarios ORDER BY fecha_registro DESC');
+      const usuarios = await query('SELECT id, nombre, email, telefono, direccion, rol, aprobado, activo, ultimo_acceso FROM usuarios ORDER BY fecha_registro DESC');
       return sendJSON(res, 200, Array.isArray(usuarios) ? usuarios.map(formatNumericRow) : []);
     }
 
@@ -2054,12 +2101,42 @@ async function handleRequest(req, res) {
       const adminCheck = requireAdmin(req);
       if (!adminCheck.ok) return sendJSON(res, adminCheck.status, { error: adminCheck.error });
       const body = await parseBody(req);
-      const id = Number(body.id);
-      if (Number.isNaN(id)) {
+      const id = sanitizeString(body.id || '');
+      if (!id) {
         return sendJSON(res, 400, { error: 'ID de usuario inválido' });
       }
-      await query('UPDATE usuarios SET aprobado = 1 WHERE id = ?', [id]);
-      return sendJSON(res, 200, { message: 'Usuario aprobado' });
+      if (id === String(adminCheck.user.id) && (body.activo === false || body.rol === 'usuario')) {
+        return sendJSON(res, 400, { error: 'No puedes desactivar tu propia cuenta ni quitarte el rol de administrador' });
+      }
+      const updates = [];
+      const params = [];
+      if (typeof body.aprobado === 'boolean') {
+        updates.push('aprobado = ?');
+        params.push(body.aprobado ? 1 : 0);
+      }
+      if (typeof body.activo === 'boolean') {
+        updates.push('activo = ?');
+        params.push(body.activo ? 1 : 0);
+      }
+      if (body.rol !== undefined) {
+        if (!['usuario', 'admin'].includes(body.rol)) {
+          return sendJSON(res, 400, { error: 'Rol inválido' });
+        }
+        updates.push('rol = ?');
+        params.push(body.rol);
+      }
+      if (updates.length === 0) {
+        return sendJSON(res, 400, { error: 'No hay cambios para aplicar' });
+      }
+      params.push(id);
+      const result = await query(`UPDATE usuarios SET ${updates.join(', ')} WHERE id = ?`, params);
+      if (!result || result.affectedRows === 0) {
+        return sendJSON(res, 404, { error: 'Usuario no encontrado' });
+      }
+      if (body.activo === false || body.aprobado === false) {
+        deleteSessionsForUser(id);
+      }
+      return sendJSON(res, 200, { message: 'Usuario actualizado correctamente' });
     }
 
     // ===== COTIZACIONES =====
@@ -2268,6 +2345,9 @@ async function handleRequest(req, res) {
       if (!isAdmin(userData) && cotizacion.usuario_id !== userData.id) {
         return sendJSON(res, 403, { error: 'No autorizado' });
       }
+      if (cotizacion.estado === 'convertida') {
+        return sendJSON(res, 409, { error: 'La cotización ya fue convertida en un pedido' });
+      }
 
       let ownerId = cotizacion.usuario_id;
       if (!ownerId && cotizacion.email_cliente) {
@@ -2285,6 +2365,22 @@ async function handleRequest(req, res) {
         [cotizacion_id, ownerId, null, 'pendiente', 'pendiente', cotizacion.total]
       );
       await query('UPDATE cotizaciones SET estado = ? WHERE id = ?', ['convertida', cotizacion_id]);
+
+      const detalleRows = await query(
+        'SELECT producto_id, cantidad, descripcion FROM cotizacion_detalles WHERE cotizacion_id = ?',
+        [cotizacion_id]
+      );
+      if (Array.isArray(detalleRows)) {
+        for (const detalle of detalleRows) {
+          const cantidad = Number(detalle.cantidad);
+          if (!Number.isFinite(cantidad) || cantidad <= 0) continue;
+          await query(
+            'INSERT INTO inventario (producto_id, cantidad, tipo_movimiento, descripcion, pedido_id, usuario_id) VALUES (?, ?, ?, ?, ?, ?)',
+            [detalle.producto_id, cantidad, 'salida', `Salida por pedido #${result.insertId}: ${detalle.descripcion || 'Producto cotizado'}`, result.insertId, ownerId]
+          );
+          await query('UPDATE productos SET stock = stock - ? WHERE id = ?', [cantidad, detalle.producto_id]);
+        }
+      }
 
       if (cotizacion.email_cliente) {
         notifyOrderCreated(cotizacion.email_cliente, result.insertId);
@@ -2558,6 +2654,10 @@ async function handleRequest(req, res) {
       const pedidoId = Number(body.pedido_id);
       const calificacion = Number(body.calificacion);
       const comentario = sanitizeString(body.comentario || '');
+
+      if (process.env.NODE_ENV !== 'test') {
+        await ensureSurveyTable();
+      }
 
       if (Number.isNaN(pedidoId)) {
         return sendJSON(res, 400, { error: 'Pedido invalido' });

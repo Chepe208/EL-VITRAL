@@ -168,15 +168,6 @@ export default function RegistroPage() {
     setErrors(prev => ({ ...prev, [name]: error }));
   };
 
-  const isFormValid = () => {
-    const nombreErr = validateNombre(formData.nombre);
-    const emailErr = validateEmail(formData.email);
-    const passwordErr = validatePassword(formData.password);
-    const telefonoErr = validateTelefono(formData.telefono);
-    const direccionErr = validateDireccion(formData.direccion);
-    return !nombreErr && !emailErr && !passwordErr && !telefonoErr && !direccionErr;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors(prev => ({ ...prev, general: '' }));
@@ -192,7 +183,14 @@ export default function RegistroPage() {
 
     const isValid = validateAll();
     if (!isValid) {
-      setErrors(prev => ({ ...prev, general: 'Por favor corrige los errores antes de continuar.' }));
+      if (!aceptaPoliticaDatos || !aceptaTerminos) {
+        setErrors(prev => ({
+          ...prev,
+          general: 'Acepta los términos y el tratamiento de datos para poder registrarte.',
+        }));
+      } else {
+        setErrors(prev => ({ ...prev, general: 'Por favor corrige los errores antes de continuar.' }));
+      }
       return;
     }
 
@@ -426,7 +424,7 @@ export default function RegistroPage() {
 
             <button
               type="submit"
-              disabled={loading || !isFormValid()}
+              disabled={loading}
               className="w-full mt-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 py-3 text-xs font-semibold text-white transition-all shadow-lg shadow-cyan-950/50 disabled:opacity-50"
             >
               {loading ? 'Registrando...' : 'Crear cuenta'}

@@ -50,6 +50,7 @@ export default function AdminCotizacionesPage() {
   // Estado para el modal de confirmación
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [cotizacionToConvert, setCotizacionToConvert] = useState<Cotizacion | CotizacionDetalle | null>(null);
+  const [cotizacionToReject, setCotizacionToReject] = useState<CotizacionDetalle | null>(null);
 
   // Estados para modales de resultado
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -155,6 +156,28 @@ export default function AdminCotizacionesPage() {
     } finally {
       setConvertingId(null);
       setCotizacionToConvert(null);
+    }
+  };
+
+  const rechazarCotizacion = async () => {
+    if (!cotizacionToReject) return;
+    try {
+      const res = await fetch(`/api/admin/cotizaciones/${cotizacionToReject.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ estado: 'rechazada' }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || 'No se pudo rechazar la cotización');
+      setModalMessage('Cotización rechazada correctamente');
+      setShowSuccessModal(true);
+      setCotizacionToReject(null);
+      closeModal();
+      fetchCotizaciones();
+    } catch (err) {
+      setModalMessage(err instanceof Error ? err.message : 'No se pudo rechazar la cotización');
+      setShowErrorModal(true);
     }
   };
 
@@ -380,6 +403,13 @@ export default function AdminCotizacionesPage() {
                   Exportar PDF
                 </button>
                 {selectedCotizacion.estado !== 'convertida' && (
+                  <>
+                  <button
+                    onClick={() => setCotizacionToReject(selectedCotizacion)}
+                    className="bg-red-600 hover:bg-red-700 text-white px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-medium rounded-lg transition-colors flex-1 sm:flex-none text-center"
+                  >
+                    Rechazar cotización
+                  </button>
                   <button
                     onClick={() => convertirAPedido(selectedCotizacion)}
                     disabled={convertingId === selectedCotizacion.id}
@@ -387,6 +417,7 @@ export default function AdminCotizacionesPage() {
                   >
                     {convertingId === selectedCotizacion.id ? 'Convirtiendo...' : 'Convertir a Pedido'}
                   </button>
+                  </>
                 )}
                 <button
                   onClick={closeModal}
@@ -395,6 +426,21 @@ export default function AdminCotizacionesPage() {
                   Cerrar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cotizacionToReject && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[70] p-4">
+          <div className="w-full max-w-md rounded-2xl border border-gray-700 bg-[#1e2939] p-6 shadow-2xl">
+            <h2 className="text-xl font-bold text-white">¿Rechazar cotización?</h2>
+            <p className="mt-3 text-sm text-gray-300">
+              La cotización <strong>{cotizacionToReject.codigo_unico}</strong> cambiará a estado rechazada.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button onClick={() => setCotizacionToReject(null)} className="rounded-lg bg-gray-700 px-4 py-2 text-sm text-white">Cancelar</button>
+              <button onClick={rechazarCotizacion} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white">Sí, rechazar</button>
             </div>
           </div>
         </div>

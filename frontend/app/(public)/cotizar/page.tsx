@@ -172,20 +172,13 @@ function CotizarContent() {
       medida_ancho: parseFloat(productoActual.medida_ancho) || undefined
     });
 
-    const medidaLargo = (producto.tipo === 'vidrio' || producto.tipo === 'espejo') && productoActual.medida_largo
-      ? Math.ceil(parseFloat(productoActual.medida_largo) / 10) * 10
-      : parseFloat(productoActual.medida_largo) || undefined;
-    const medidaAncho = (producto.tipo === 'vidrio' || producto.tipo === 'espejo') && productoActual.medida_ancho
-      ? Math.ceil(parseFloat(productoActual.medida_ancho) / 10) * 10
-      : parseFloat(productoActual.medida_ancho) || undefined;
-
     setItems([...items, {
       producto_id: producto.id,
       nombre: producto.nombre,
       tipo: producto.tipo,
       cantidad,
-      medida_largo: medidaLargo,
-      medida_ancho: medidaAncho,
+      medida_largo: parseFloat(productoActual.medida_largo) || undefined,
+      medida_ancho: parseFloat(productoActual.medida_ancho) || undefined,
       precio
     }]);
 
@@ -220,9 +213,6 @@ function CotizarContent() {
         return;
       }
       (item as unknown as Record<string, number | string | undefined>)[campo] = Number.isNaN(numeroMedida) ? undefined : numeroMedida;
-      if ((item.tipo === 'vidrio' || item.tipo === 'espejo') && numeroMedida > 0) {
-        item[campo] = Math.ceil(numeroMedida / 10) * 10;
-      }
     } else {
       (item as unknown as Record<string, number | string | undefined>)[campo] = valor;
     }

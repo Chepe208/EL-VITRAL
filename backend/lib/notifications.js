@@ -120,10 +120,29 @@ async function notifyPaymentReceived(adminEmails, pedidoId, amountPaid, isAntici
   await Promise.all(promises);
 }
 
+async function notifyQuoteRejected(userEmail, quoteCode, customerName) {
+  if (!userEmail) return;
+  const transporter = getTransporter();
+  const subject = `Actualización de tu cotización ${quoteCode}`;
+  const text = `Hola ${customerName || ''}, tu cotización ${quoteCode} ha sido rechazada. Comunícate con EL VITRAL si necesitas más información.`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
+      <h2 style="color: #dc2626;">Actualización de cotización</h2>
+      <p>Hola${customerName ? ` <strong>${customerName}</strong>` : ''},</p>
+      <p>Tu cotización <strong>${quoteCode}</strong> ha sido rechazada.</p>
+      <p>Si necesitas más información o deseas ajustar tu solicitud, comunícate con EL VITRAL.</p>
+      <p>Saludos cordiales,<br/>EL VITRAL</p>
+    </div>
+  `;
+  return sendEmail({ transporter, to: userEmail, subject, text, html })
+    .catch(error => console.error('Error al enviar correo de cotización rechazada:', error));
+}
+
 module.exports = {
   notifyOrderCreated,
   notifyOrderStateChange,
   notifyAppointment,
   notifyStockMovement,
-  notifyPaymentReceived
+  notifyPaymentReceived,
+  notifyQuoteRejected
 };

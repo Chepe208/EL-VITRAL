@@ -146,6 +146,7 @@ export default function MisPedidosPage() {
   const enviarEncuesta = async () => {
     if (!surveyPedido) return;
 
+    setMensaje('');
     setSendingSurvey(true);
 
     try {
@@ -169,10 +170,11 @@ export default function MisPedidosPage() {
         return;
       }
 
+      const pedidoEncuestadoId = surveyPedido.id;
       setPedidos((prev) =>
         prev.map((pedido) =>
-          pedido.id === surveyPedido.id
-            ? { ...pedido, encuesta_id: data.id }
+          pedido.id === pedidoEncuestadoId
+            ? { ...pedido, encuesta_id: data?.id ?? -1 }
             : pedido
         )
       );
@@ -509,6 +511,7 @@ export default function MisPedidosPage() {
               <button
                 onClick={enviarEncuesta}
                 disabled={sendingSurvey}
+                type="button"
                 className="px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white disabled:opacity-50 transition-colors shadow-lg shadow-emerald-950/50"
               >
                 {sendingSurvey ? 'Enviando...' : 'Enviar Encuesta'}
@@ -525,8 +528,8 @@ export default function MisPedidosPage() {
             <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-3xl">
               ✓
             </div>
-            <h3 className="text-xl font-bold text-white mb-1">¡Gracias por tus comentarios!</h3>
-            <p className="text-gray-400 text-xs mb-6">Tus sugerencias nos ayudan a seguir mejorando.</p>
+            <h3 className="text-xl font-bold text-white mb-1">¡Encuesta guardada!</h3>
+            <p className="text-gray-400 text-xs mb-6">Gracias por tus comentarios. Tus sugerencias nos ayudan a seguir mejorando.</p>
             <button
               onClick={() => setShowThankYouModal(false)}
               className="w-full py-2.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"

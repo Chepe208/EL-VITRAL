@@ -38,3 +38,71 @@ INSERT INTO proyectos_destacados (titulo, slug, resumen, descripcion, imagen_url
 ('Fachada Comercial', 'fachada-comercial', 'Instalación de vidrio templado de alta resistencia para centro comercial.', 'Este proyecto consistió en la instalación de una fachada completa de vidrio templado de 12 mm, con estructura de aluminio anodizado. El diseño aporta transparencia y eficiencia energética.', 'https://vidriostemplex.com/wp-content/uploads/2022/06/PHOTO-2021-11-26-11-01-21-1536x1152.jpg', 'Vidrio templado, Aluminio anodizado, Sellado estructural', 1, 1),
 ('Divisiones Corporativas', 'divisiones-corporativas', 'Separadores de ambiente en vidrio laminado acústico para oficinas modernas.', 'Instalación de divisiones modulares en vidrio laminado con cámara acústica para un entorno moderno, funcional y con excelente aislamiento sonoro.', 'https://th.bing.com/th/id/R.e021e394864a3ee46e884b5f8c597845?rik=zkzo18kF9sPPNA&pid=ImgRaw&r=0', 'Vidrio laminado, Perfiles de aluminio, Fijaciones invisibles', 2, 1),
 ('Barandas Residenciales', 'barandas-residenciales', 'Diseño e instalación de barandas de cristal templado para balcones y terrazas.', 'Barandas de vidrio templado sin perfiles, fijadas con sistemas ocultos que combinan seguridad y elegancia en exteriores.', 'https://lucor.es/wp-content/uploads/2023/01/barandillas-de-vidrio-view-crystal-03.jpg', 'Vidrio templado, Sujeción invisible, Acero inoxidable', 3, 1);
+
+-- Datos demo para desarrollo y pruebas.
+-- Usuarios: demo1@example.com a demo5@example.com
+-- Contraseña común: Demo123!
+START TRANSACTION;
+
+-- Permite ejecutar este bloque nuevamente sin duplicar los datos demo.
+DELETE es
+FROM encuestas_satisfaccion es
+JOIN usuarios u ON u.id = es.usuario_id
+WHERE u.email LIKE 'demo%@example.com';
+
+DELETE p
+FROM pedidos p
+JOIN cotizaciones c ON c.id = p.cotizacion_id
+WHERE c.codigo_unico LIKE 'DEMO-%';
+
+DELETE FROM cotizaciones
+WHERE codigo_unico LIKE 'DEMO-%';
+
+DELETE FROM usuarios
+WHERE email LIKE 'demo%@example.com';
+
+INSERT INTO usuarios (
+    id, nombre, email, password, telefono, direccion, rol, aprobado, activo,
+    politica_datos_aceptada, politica_datos_aceptada_at,
+    terminos_aceptados, terminos_aceptados_at
+) VALUES
+('00000000-0000-4000-8000-000000000001', 'Laura Gómez', 'demo1@example.com', '$2b$10$i0XMcfnThPRmltKOriljvuyUhhVunVmec6M07kgjBGPBzz4lh6BBC', '3005551001', 'Calle 12 # 8-20, Bogotá', 'usuario', 1, 1, 1, NOW(), 1, NOW()),
+('00000000-0000-4000-8000-000000000002', 'Andrés Rodríguez', 'demo2@example.com', '$2b$10$i0XMcfnThPRmltKOriljvuyUhhVunVmec6M07kgjBGPBzz4lh6BBC', '3005551002', 'Carrera 45 # 90-12, Medellín', 'usuario', 1, 1, 1, NOW(), 1, NOW()),
+('00000000-0000-4000-8000-000000000003', 'Camila Torres', 'demo3@example.com', '$2b$10$i0XMcfnThPRmltKOriljvuyUhhVunVmec6M07kgjBGPBzz4lh6BBC', '3005551003', 'Calle 30 # 20-15, Cali', 'usuario', 1, 1, 1, NOW(), 1, NOW()),
+('00000000-0000-4000-8000-000000000004', 'Santiago Martínez', 'demo4@example.com', '$2b$10$i0XMcfnThPRmltKOriljvuyUhhVunVmec6M07kgjBGPBzz4lh6BBC', '3005551004', 'Carrera 7 # 72-40, Bogotá', 'usuario', 1, 1, 1, NOW(), 1, NOW()),
+('00000000-0000-4000-8000-000000000005', 'Valentina Pérez', 'demo5@example.com', '$2b$10$i0XMcfnThPRmltKOriljvuyUhhVunVmec6M07kgjBGPBzz4lh6BBC', '3005551005', 'Calle 5 # 10-33, Pereira', 'usuario', 1, 1, 1, NOW(), 1, NOW());
+
+INSERT INTO cotizaciones (
+    usuario_id, nombre_cliente, email_cliente, telefono_cliente, direccion_cliente,
+    subtotal, total, estado, codigo_unico
+) VALUES
+((SELECT id FROM usuarios WHERE email = 'demo1@example.com'), 'Laura Gómez', 'demo1@example.com', '3005551001', 'Calle 12 # 8-20, Bogotá', 420000, 420000, 'vigente', 'DEMO-COT-001'),
+((SELECT id FROM usuarios WHERE email = 'demo1@example.com'), 'Laura Gómez', 'demo1@example.com', '3005551001', 'Calle 12 # 8-20, Bogotá', 680000, 680000, 'convertida', 'DEMO-COT-002'),
+((SELECT id FROM usuarios WHERE email = 'demo2@example.com'), 'Andrés Rodríguez', 'demo2@example.com', '3005551002', 'Carrera 45 # 90-12, Medellín', 295000, 295000, 'aprobada', 'DEMO-COT-003'),
+((SELECT id FROM usuarios WHERE email = 'demo3@example.com'), 'Camila Torres', 'demo3@example.com', '3005551003', 'Calle 30 # 20-15, Cali', 510000, 510000, 'rechazada', 'DEMO-COT-004'),
+((SELECT id FROM usuarios WHERE email = 'demo4@example.com'), 'Santiago Martínez', 'demo4@example.com', '3005551004', 'Carrera 7 # 72-40, Bogotá', 890000, 890000, 'convertida', 'DEMO-COT-005'),
+((SELECT id FROM usuarios WHERE email = 'demo5@example.com'), 'Valentina Pérez', 'demo5@example.com', '3005551005', 'Calle 5 # 10-33, Pereira', 175000, 175000, 'vigente', 'DEMO-COT-006');
+
+INSERT INTO cotizacion_detalles (
+    cotizacion_id, producto_id, descripcion, cantidad, medida_largo, medida_ancho,
+    grosor, precio_unitario, subtotal
+) VALUES
+((SELECT id FROM cotizaciones WHERE codigo_unico = 'DEMO-COT-001'), 209, 'Vidrio templado para división', 1, 200, 120, 5, 420000, 420000),
+((SELECT id FROM cotizaciones WHERE codigo_unico = 'DEMO-COT-002'), 210, 'Vidrio templado para puerta', 2, 180, 80, 6, 340000, 680000),
+((SELECT id FROM cotizaciones WHERE codigo_unico = 'DEMO-COT-003'), 217, 'Kit de herrajes para ventana', 1, NULL, NULL, NULL, 295000, 295000),
+((SELECT id FROM cotizaciones WHERE codigo_unico = 'DEMO-COT-004'), 213, 'Espejo decorativo', 2, 120, 80, 3, 255000, 510000),
+((SELECT id FROM cotizaciones WHERE codigo_unico = 'DEMO-COT-005'), 222, 'Perfil de aluminio para fachada', 2, 300, NULL, NULL, 445000, 890000),
+((SELECT id FROM cotizaciones WHERE codigo_unico = 'DEMO-COT-006'), 219, 'Silicona transparente', 2, NULL, NULL, NULL, 87500, 175000);
+
+INSERT INTO pedidos (
+    cotizacion_id, usuario_id, fecha_entrega, estado, pago, total, notas
+) VALUES
+((SELECT id FROM cotizaciones WHERE codigo_unico = 'DEMO-COT-002'), (SELECT id FROM usuarios WHERE email = 'demo1@example.com'), DATE_ADD(CURDATE(), INTERVAL 10 DAY), 'en_proceso', 'anticipo', 680000, 'Pedido demo con anticipo registrado.'),
+((SELECT id FROM cotizaciones WHERE codigo_unico = 'DEMO-COT-003'), (SELECT id FROM usuarios WHERE email = 'demo2@example.com'), DATE_ADD(CURDATE(), INTERVAL 15 DAY), 'pendiente', 'pendiente', 295000, 'Pedido demo pendiente de pago.'),
+((SELECT id FROM cotizaciones WHERE codigo_unico = 'DEMO-COT-005'), (SELECT id FROM usuarios WHERE email = 'demo4@example.com'), DATE_SUB(CURDATE(), INTERVAL 5 DAY), 'entregado', 'pagado', 890000, 'Pedido demo entregado.');
+
+INSERT INTO encuestas_satisfaccion (pedido_id, usuario_id, calificacion, comentario) VALUES
+((SELECT p.id FROM pedidos p JOIN cotizaciones c ON c.id = p.cotizacion_id WHERE c.codigo_unico = 'DEMO-COT-005'), (SELECT id FROM usuarios WHERE email = 'demo4@example.com'), 5, 'Excelente atención y muy buen acabado.'),
+((SELECT p.id FROM pedidos p JOIN cotizaciones c ON c.id = p.cotizacion_id WHERE c.codigo_unico = 'DEMO-COT-002'), (SELECT id FROM usuarios WHERE email = 'demo1@example.com'), 4, 'El trabajo quedó muy bien y cumplieron los tiempos.');
+
+COMMIT;
