@@ -26,7 +26,7 @@ export default function InventarioPage() {
   const [productos, setProductos] = useState<ProductoCombo[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<number | ''>('');
-  const [cantidad, setCantidad] = useState<number>(0);
+  const [cantidad, setCantidad] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -71,7 +71,8 @@ export default function InventarioPage() {
     setError('');
     setSuccess('');
 
-    if (!selectedProduct || cantidad <= 0) {
+    const cantidadNumerica = Number(cantidad);
+    if (!selectedProduct || !Number.isInteger(cantidadNumerica) || cantidadNumerica <= 0) {
       setError('Selecciona producto y cantidad válida.');
       return;
     }
@@ -83,7 +84,7 @@ export default function InventarioPage() {
         credentials: 'include',
         body: JSON.stringify({
           producto_id: selectedProduct,
-          cantidad,
+          cantidad: cantidadNumerica,
           descripcion,
         }),
       });
@@ -96,7 +97,7 @@ export default function InventarioPage() {
 
       setSuccess('Entrada registrada correctamente.');
       setSelectedProduct('');
-      setCantidad(0);
+      setCantidad('');
       setDescripcion('');
       loadData();
     } catch (error) {
@@ -192,7 +193,7 @@ export default function InventarioPage() {
                   type="number"
                   value={cantidad}
                   min={1}
-                  onChange={(event) => setCantidad(Number(event.target.value))}
+                  onChange={(event) => setCantidad(event.target.value)}
                   className="w-full rounded-md border border-gray-700 bg-gray-900 text-white px-3 py-2 min-h-[44px]"
                 />
               </div>
