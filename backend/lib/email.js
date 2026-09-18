@@ -12,12 +12,66 @@ function buildResetPasswordLink(token, frontendUrl = 'http://localhost:3000') {
 }
 
 async function sendEmail({ transporter, to, subject, text, html }) {
+  // 1. Soporte para Resend HTTP API (puerto 443, no se bloquea en Render)
+  if (process.env.RESEND_API_KEY) {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: process.env.EMAIL_FROM || 'EL VITRAL <onboarding@resend.dev>',
+        to: Array.isArray(to) ? to : [to],
+        subject,
+        text,
+        html,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error('Error Resend API:', data);
+      throw new Error(`Error Resend: ${data.message || JSON.stringify(data)}`);
+    }
+    return data;
+  }
+
+  // 2. Soporte para Brevo HTTP API (puerto 443, 300 correos/día a cualquier correo)
+  if (process.env.BREVO_API_KEY) {
+    const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: {
+          name: 'EL VITRAL',
+          email: process.env.SMTP_USER || 'elvitralsena@gmail.com',
+        },
+        to: (Array.isArray(to) ? to : [to]).map(e => ({ email: e })),
+        subject,
+        htmlContent: html,
+        textContent: text,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.error('Error Brevo API:', data);
+      throw new Error(`Error Brevo: ${data.message || JSON.stringify(data)}`);
+    }
+    return data;
+  }
+
+  // 3. Fallback: SMTP tradicional con Nodemailer
   if (!transporter || !to || !subject || !text) {
-    throw new Error('Faltan datos para enviar el correo');
+    throw new Error('Faltan datos para enviar el correo o credenciales de email');
   }
 
   return transporter.sendMail({
-    from: 'EL VITRAL <no-reply@elvitral.com>',
+    from: process.env.SMTP_USER ? `EL VITRAL <${process.env.SMTP_USER}>` : 'EL VITRAL <no-reply@elvitral.com>',
     to,
     subject,
     text,
@@ -26,22 +80,25 @@ async function sendEmail({ transporter, to, subject, text, html }) {
 }
 
 async function sendPasswordResetEmail({ to, token, frontendUrl }) {
+  let transporter = null;
   const smtpUser = process.env.SMTP_USER;
   const smtpPass = process.env.SMTP_PASS;
 
-  if (!smtpUser || !smtpPass) {
-    throw new Error('Faltan credenciales SMTP. Revisa SMTP_USER y SMTP_PASS en backend/.env');
-  }
+  if (!process.env.RESEND_API_KEY && !process.env.BREVO_API_KEY) {
+    if (!smtpUser || !smtpPass) {
+      throw new Error('Faltan credenciales SMTP (o RESEND_API_KEY / BREVO_API_KEY).');
+    }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: false,
-    auth: {
-      user: smtpUser,
-      pass: smtpPass,
-    },
-  });
+    transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: Number(process.env.SMTP_PORT || 587),
+      secure: false,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass,
+      },
+    });
+  }
 
   const resetLink = buildResetPasswordLink(token, frontendUrl);
   const subject = 'Recupera tu contraseña en EL VITRAL';

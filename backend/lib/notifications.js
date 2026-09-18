@@ -3,6 +3,9 @@ const nodemailer = require('nodemailer');
 const { sendEmail } = require('./email');
 
 function getTransporter() {
+  if (process.env.RESEND_API_KEY || process.env.BREVO_API_KEY) {
+    return null;
+  }
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: Number(process.env.SMTP_PORT || 587),
