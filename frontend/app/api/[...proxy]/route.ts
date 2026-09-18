@@ -105,6 +105,11 @@ export async function handler(req: NextRequest) {
     const responseBody = await response.arrayBuffer();
     const responseHeaders = new Headers(response.headers);
 
+    // Remove headers that were invalidated by fetch's automatic body decompression
+    responseHeaders.delete('content-encoding');
+    responseHeaders.delete('content-length');
+    responseHeaders.delete('transfer-encoding');
+
     // Reenviar las cookies (sid) que devuelva el backend tal cual, incluidas
     // las del refresh, de modo que el navegador conserve la sesión.
     refreshedCookies.forEach((cookie) => {
