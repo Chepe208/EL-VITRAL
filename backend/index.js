@@ -1425,7 +1425,7 @@ async function handleRequest(req, res) {
       } catch (emailError) {
         console.error('Error sending password reset email:', emailError);
         return sendJSON(res, 500, {
-          error: 'No se pudo enviar el correo. Revisa SMTP_USER, SMTP_PASS y el servidor de correo.',
+          error: `No se pudo enviar el correo: ${emailError.message || 'Error desconocido'}`,
         });
       }
 
