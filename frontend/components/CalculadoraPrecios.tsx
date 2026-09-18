@@ -494,6 +494,16 @@ export default function CalculadoraPrecios() {
                     ℹ️ <em>Este cálculo es aproximado y puede variar según las condiciones finales del proyecto, acabados e instalación.</em>
                   </p>
 
+                  {/* Aviso de transporte */}
+                  <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl text-left flex items-start gap-2.5 text-amber-200">
+                    <span className="text-base shrink-0 mt-0.5" aria-hidden="true">🚚</span>
+                    <p className="text-[11px] text-gray-300 leading-relaxed">
+                      <strong className="text-amber-300 block font-semibold mb-0.5">Transporte no incluido:</strong>
+                      Los precios que se dan <strong className="text-amber-200 font-bold">NO tienen incluido el transporte</strong>. Para el servicio de transporte es necesario llamar al{' '}
+                      <a href="tel:3137928483" className="text-cyan-400 font-bold hover:underline">3137928483</a>.
+                    </p>
+                  </div>
+
                   {/* Acciones complementarias amigables */}
                   <div className="mt-4 pt-3 border-t border-gray-800/60 flex flex-col sm:flex-row gap-2">
                     <Link

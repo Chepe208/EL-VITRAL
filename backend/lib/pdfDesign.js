@@ -255,13 +255,27 @@ function drawFooter(doc) {
     .stroke();
 
   doc
+    .font('Helvetica-Bold')
+    .fontSize(8)
+    .fillColor('#b45309')
+    .text(
+      'Nota: Los precios cotizados NO tienen incluido el transporte. Para servicio de transporte llamar al 3137928483.',
+      margin,
+      footerY - 8,
+      {
+        width: doc.page.width - margin * 2,
+        align: 'center',
+      }
+    );
+
+  doc
     .font('Helvetica')
-    .fontSize(9)
+    .fontSize(8.5)
     .fillColor('#94a3b8')
     .text(
       'Gracias por preferir El Vitral. Para preguntas o asesoría, contáctanos al 3137928483.',
       margin,
-      footerY,
+      footerY + 8,
       {
         width: doc.page.width - margin * 2,
         align: 'center',

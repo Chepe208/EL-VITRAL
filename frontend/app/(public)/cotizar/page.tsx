@@ -432,6 +432,14 @@ function CotizarContent() {
             </button>
           </div>
 
+          <div className="bg-amber-950/40 border border-amber-500/30 rounded-xl p-3.5 mb-4 text-xs text-amber-200 flex items-start gap-2.5 text-left">
+            <span className="material-symbols-outlined text-lg shrink-0 text-amber-400 mt-0.5">local_shipping</span>
+            <div>
+              <strong className="text-amber-300 block mb-0.5">Transporte no incluido</strong>
+              <span>Los precios que se dan <strong>NO tienen incluido el transporte</strong>, para el servicio de transporte es necesario llamar al <a href="tel:3137928483" className="text-white font-bold underline">3137928483</a>.</span>
+            </div>
+          </div>
+
           <div className="bg-cyan-950/40 border border-cyan-500/20 rounded-xl p-3.5 mb-6 text-xs text-cyan-300 flex items-center gap-2 text-left">
             <span className="material-symbols-outlined text-lg shrink-0">contact_support</span>
             <span>¿Requieres asistencia inmediata? Comunícate al <strong className="text-white font-bold">3137928483</strong>.</span>
@@ -867,6 +875,11 @@ function CotizarContent() {
                   <span>A coordinar según proyecto</span>
                 </div>
 
+                <div className="flex items-center justify-between text-amber-400/90 font-medium">
+                  <span>Transporte:</span>
+                  <span className="text-amber-300 font-bold">NO incluido</span>
+                </div>
+
                 <div className="pt-4 border-t border-gray-800 flex items-baseline justify-between">
                   <span className="text-sm font-bold text-white">Total Estimado:</span>
                   <div className="text-right">
@@ -875,6 +888,18 @@ function CotizarContent() {
                     </span>
                     <span className="text-[10px] text-gray-400 block font-semibold">COP (Pesos Colombianos)</span>
                   </div>
+                </div>
+              </div>
+
+              {/* Advertencia de Transporte */}
+              <div className="mb-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 p-3.5 flex items-start gap-2.5 text-amber-200">
+                <span className="material-symbols-outlined text-amber-400 text-lg shrink-0 mt-0.5">local_shipping</span>
+                <div className="text-xs leading-relaxed text-gray-300">
+                  <span className="font-bold text-amber-300 block mb-0.5">Aviso importante de transporte</span>
+                  <p className="text-[11px]">
+                    Los precios que se dan <strong className="text-amber-200">NO tienen incluido el transporte</strong>. Para el servicio de transporte es necesario llamar al{' '}
+                    <a href="tel:3137928483" className="font-bold text-cyan-400 hover:text-cyan-300 underline">3137928483</a>.
+                  </p>
                 </div>
               </div>
 
