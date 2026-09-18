@@ -1416,11 +1416,19 @@ async function handleRequest(req, res) {
         [token, expiresAt, user.id]
       );
 
+      let detectedFrontendUrl = req.headers['x-frontend-url']
+        || req.headers['origin']
+        || (req.headers['referer'] ? (() => { try { return new URL(req.headers['referer']).origin; } catch { return null; } })() : null);
+
+      const targetFrontendUrl = (process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes('localhost'))
+        ? process.env.FRONTEND_URL
+        : (detectedFrontendUrl || process.env.FRONTEND_URL || 'http://localhost:3000');
+
       try {
         await sendPasswordResetEmail({
           to: user.email,
           token,
-          frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+          frontendUrl: targetFrontendUrl,
         });
       } catch (emailError) {
         console.error('Error sending password reset email:', emailError);

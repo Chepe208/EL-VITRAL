@@ -64,6 +64,7 @@ export async function handler(req: NextRequest) {
   if (contentType) {
     headers.set('content-type', contentType);
   }
+  headers.set('x-frontend-url', req.nextUrl.origin);
 
   try {
     let response = await fetch(backendUrl.toString(), {
