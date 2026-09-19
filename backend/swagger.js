@@ -20,12 +20,12 @@ const options = {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT',
-          description: 'Ingresa el token JWT con el formato: Bearer <token>'
-        }
-      }
+          description: 'Ingresa el token JWT con el formato: Bearer <token>',
+        },
+      },
     },
   },
-  apis: ['./index.js'],
+  apis: ['./src/routes/*.routes.js'],
 };
 
 const specs = swaggerJsdoc(options);
